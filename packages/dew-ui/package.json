@@ -1,0 +1,20 @@
+{
+  "name": "@bme/dew-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "BME DewUI 液态玻璃组件库（22 组件）。依赖 @bme/styles 的 tokens.css 提供设计变量，消费方需在入口 import '@bme/styles/tokens.css'",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*"
+  },
+  "dependencies": {
+    "@bme/styles": "workspace:*"
+  },
+  "peerDependencies": {
+    "element-plus": ">=2.8.0",
+    "@element-plus/icons-vue": ">=2.3.0",
+    "vue": ">=3.4.0"
+  }
+}

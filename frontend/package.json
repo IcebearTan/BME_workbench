@@ -1,0 +1,28 @@
+{
+  "name": "@bme/workbench-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8083 --strictPort",
+    "dev:test": "vite --mode test --host 127.0.0.1 --port 18083 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8083 --strictPort",
+    "test:e2e": "playwright test -c e2e/playwright.config.js"
+  },
+  "dependencies": {
+    "@bme/dew-ui": "workspace:*",
+    "@bme/styles": "workspace:*",
+    "@element-plus/icons-vue": "2.3.2",
+    "axios": "1.19.0",
+    "element-plus": "2.14.5",
+    "vue": "3.5.41",
+    "vue-router": "4.6.4",
+    "vuex": "4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@vitejs/plugin-vue": "5.2.4",
+    "vite": "5.4.21"
+  }
+}

@@ -1,0 +1,138 @@
+/*
+ * BME 共享富文本正文样式 —— 单一真相源（Single Source of Truth）
+ * 权威文件：packages/styles/article-content.css（@bme/styles）
+ * 两 app 打包经 import '@bme/styles/article-content.css' 引入；
+ * public/ 运行时副本（TinyMCE iframe content_css URL）由各 app 的
+ * predev/prebuild 钩子运行 packages/styles/copy-to-public.mjs 自动生成，
+ * 不再手工镜像同步（原 sync-richtext.js 已删除）。
+ *
+ * 设计：
+ *   - 选择器统一 .rich-text 前缀，作用域隔离，零全局污染（无 :root 声明，绝不影响 DewUI 其它组件）。
+ *   - 变量用 --rt-* 命名空间，仅在 .rich-text 上声明；取值写作 var(--dew-x, fallback)：
+ *       · 主文档（用户端展示 / admin 预览）：--dew-x 来自 tokens.css，正文自动跟随设计系统（DRY）。
+ *       · TinyMCE iframe：--dew-x 不存在，回退到字面量（自包含）。
+ *   - 三个宿主各自在内容容器上挂 rich-text class：用户端 .content-body、admin 预览 .preview-body、
+ *     TinyMCE iframe <body>（init 时由 JS 挂上，并同步 theme-dark/theme-light）。
+ *
+ * 同步约定：tokens.css 改名/改值时，下方 fallback 字面量须同步（仅影响 iframe 画布）。
+ * 改本文件后，运行 `npm run sync:richtext`（BME_frontend）把权威源同步到三个镜像。
+ */
+
+/* ━━━━ 变量别名（.rich-text 作用域；fallback = iframe 镜像值） ━━━━ */
+.rich-text {
+  --rt-text:         var(--dew-text,         #374151);
+  --rt-text-heading: var(--dew-text-heading, #1f2937);
+  --rt-text-muted:   var(--dew-text-muted,   #6b7280);
+  --rt-text-faint:   var(--dew-text-faint,   #9ca3af);
+  --rt-inset-bg:     var(--dew-card-inset-bg,     rgba(255,255,255,0.20));
+  --rt-inset-border: var(--dew-card-inset-border, rgba(255,255,255,0.20));
+  --rt-divider:      var(--dew-card-divider,      rgba(0,0,0,0.06));
+  --rt-link:         #3b82f6;   /* DewUI 无链接色 token，共享 CSS 内聚，两端一致 */
+  --rt-font:         var(--dew-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif);
+  --rt-font-mono:    var(--dew-font-mono, ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace);
+}
+/* 暗色：主文档用 .theme-dark 祖先；iframe 用同元素复合类 —— 两种挂载都覆盖 */
+.theme-dark .rich-text,
+.rich-text.theme-dark {
+  --rt-text:         var(--dew-text,         rgba(255,255,255,0.88));
+  --rt-text-heading: var(--dew-text-heading, rgba(255,255,255,0.92));
+  --rt-text-muted:   var(--dew-text-muted,   rgba(255,255,255,0.55));
+  --rt-text-faint:   var(--dew-text-faint,   rgba(255,255,255,0.35));
+  --rt-inset-bg:     var(--dew-card-inset-bg,     rgba(255,255,255,0.03));
+  --rt-inset-border: var(--dew-card-inset-border, rgba(255,255,255,0.06));
+  --rt-divider:      var(--dew-card-divider,      rgba(255,255,255,0.06));
+  --rt-link:         #60a5fa;
+}
+
+/* ━━━━ 容器 ━━━━ */
+.rich-text {
+  font-family: var(--rt-font);
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--rt-text);
+  word-break: break-word;
+}
+
+/* ━━━━ 标题 ━━━━ */
+.rich-text h1, .rich-text h2, .rich-text h3,
+.rich-text h4, .rich-text h5, .rich-text h6 {
+  color: var(--rt-text-heading);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.4em 0 0.6em;
+  scroll-margin-top: 80px;            /* TOC 锚点偏移（用户端 ArticleDetail 需要） */
+}
+.rich-text h1 { font-size: 1.7em; }
+.rich-text h2 { font-size: 1.4em; }
+.rich-text h3 { font-size: 1.2em; }
+.rich-text h4 { font-size: 1.05em; }
+.rich-text h5 { font-size: 0.95em; }
+.rich-text h6 { font-size: 0.9em; color: var(--rt-text-muted); }
+
+/* ━━━━ 段落 / 列表 ━━━━ */
+.rich-text p       { margin: 1em 0; }
+.rich-text ul,
+.rich-text ol      { padding-left: 1.6em; margin: 1em 0; }
+.rich-text li      { margin: 0.3em 0; }
+
+/* ━━━━ 引用（克制灰 —— 用户拍板：无背景/无圆角） ━━━━ */
+.rich-text blockquote {
+  margin: 1em 0;
+  padding: 4px 16px;
+  border-left: 3px solid var(--rt-text-faint);   /* 亮 #9ca3af / 暗 rgba(255,255,255,0.35) */
+  color: var(--rt-text-muted);
+  background: none;
+  border-radius: 0;
+}
+.rich-text blockquote p { margin: 0.5em 0; }
+
+/* ━━━━ 行内代码 ━━━━ */
+.rich-text code {
+  background: var(--rt-inset-bg);
+  color: var(--rt-text);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--rt-font-mono);
+  font-size: 0.9em;
+}
+
+/* ━━━━ 代码块（统一 inset 浅底，DewUI 克制；原编辑器深底/展示浅底统一到此） ━━━━ */
+.rich-text pre {
+  background: var(--rt-inset-bg);
+  border: 1px solid var(--rt-inset-border);
+  color: var(--rt-text);
+  padding: 14px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.2em 0;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+.rich-text pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ━━━━ 链接（DewUI 无蓝色文字 token，用 --rt-link） ━━━━ */
+.rich-text a       { color: var(--rt-link); text-decoration: none; }
+.rich-text a:hover { text-decoration: underline; }
+
+/* ━━━━ 图片（克制：仅圆角，无阴影 —— 避免和 TinyMCE 选中态/resize 手柄冲突） ━━━━ */
+.rich-text img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1em 0;
+}
+
+/* ━━━━ 表格（用 --dew-card-divider，两端 tokens 都有；不用 flat-divider） ━━━━ */
+.rich-text table { width: 100%; border-collapse: collapse; margin: 1.2em 0; font-size: 0.95em; }
+.rich-text th,
+.rich-text td    { padding: 10px 14px; border: 1px solid var(--rt-divider); text-align: left; }
+.rich-text th    { background: var(--rt-inset-bg); font-weight: 600; color: var(--rt-text-heading); }
+
+/* ━━━━ 分割线 ━━━━ */
+.rich-text hr { border: none; border-top: 1px solid var(--rt-divider); margin: 1.5em 0; }

@@ -1,0 +1,446 @@
+/*
+ * Dew UI Design Tokens
+ * 风格：圆润 + 毛玻璃 + 柔和阴影
+ */
+
+:root {
+  /* ── 字体 ── */
+  --dew-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --dew-font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* ── 品牌色 ── */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-light: #eff6ff;
+  --color-primary-subtle: #dbeafe;
+
+  /* ── 语义色 ── */
+  --color-success: #10b981;
+  --color-success-light: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-danger: #ef4444;
+  --color-danger-light: #fef2f2;
+  --color-info: #6366f1;
+  --color-info-light: #eef2ff;
+
+  /* ── 中性色 ── */
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #f0f0f0;
+  --color-bg: #ffffff;
+  --color-bg-soft: #f9fafb;
+  --color-bg-muted: #f3f4f6;
+
+  /* ── 圆角 ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* ── 阴影（柔和多层） ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.10);
+
+  /* ── 毛玻璃 ── */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: blur(12px);
+
+  /* ── 间距 ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  /* ── 字号 ── */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+
+  /* ── 过渡 ── */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+
+  /* ── 动画曲线 ── */
+  --dew-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ━━━━ Dew 组件级变量（亮色默认值） ━━━━ */
+
+  /* 文字 */
+  --dew-text:       #374151;
+  --dew-text-heading: #1f2937;
+  --dew-text-muted: #6b7280;
+  --dew-text-faint: #9ca3af;
+
+  /* 按钮 glass */
+  --dew-btn-bg:       rgba(255, 255, 255, 0.15);
+  --dew-btn-bg-hover: rgba(255, 255, 255, 0.25);
+  --dew-btn-border:   rgba(255, 255, 255, 0.25);
+  --dew-btn-shadow:   0 2px 12px rgba(0,0,0,0.04), inset 0 0 0 0.5px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.35);
+  --dew-btn-shadow-hover: 0 6px 24px rgba(0,0,0,0.07), inset 0 0 0 0.5px rgba(255,255,255,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+
+  /* 按钮 ghost */
+  --dew-ghost-hover-bg:   rgba(0, 0, 0, 0.04);
+  --dew-ghost-hover-text: #374151;
+
+  /* 按钮 danger */
+  --dew-btn-danger-bg:          rgba(239, 68, 68, 0.16);
+  --dew-btn-danger-bg-hover:    rgba(239, 68, 68, 0.25);
+  --dew-btn-danger-border:      rgba(239, 68, 68, 0.22);
+  --dew-btn-danger-color:       #ef4444;
+  --dew-btn-danger-shadow:      0 2px 8px rgba(239,68,68,0.1), inset 0 0 0 0.5px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+  --dew-btn-danger-shadow-hover: 0 6px 24px rgba(239,68,68,0.18), inset 0 0 0 0.5px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+  --dew-btn-danger-text-shadow: 0 0 12px rgba(239,68,68,0.3);
+
+  /* 按钮 lit（白光点亮） */
+  --dew-btn-lit-bg:          rgba(255, 255, 255, 0.5);
+  --dew-btn-lit-bg-hover:    rgba(255, 255, 255, 0.6);
+  --dew-btn-lit-border:      rgba(255, 255, 255, 0.55);
+  --dew-btn-lit-color:       #1f2937;
+  --dew-btn-lit-shadow:      0 0 20px rgba(255,255,255,0.2), 0 0 40px rgba(255,255,255,0.08), inset 0 0 10px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,0.5);
+  --dew-btn-lit-shadow-hover: 0 0 28px rgba(255,255,255,0.3), 0 0 56px rgba(255,255,255,0.12), inset 0 0 14px rgba(255,255,255,0.35), inset 0 1px 0 rgba(255,255,255,0.6);
+  --dew-btn-lit-text-shadow: 0 0 8px rgba(255,255,255,0.4);
+
+  /* 按钮 danger lit（红色光焰） */
+  --dew-btn-danger-lit-bg:          rgba(239, 68, 68, 0.55);
+  --dew-btn-danger-lit-bg-hover:    rgba(239, 68, 68, 0.65);
+  --dew-btn-danger-lit-border:      rgba(239, 68, 68, 0.6);
+  --dew-btn-danger-lit-color:       #fff;
+  --dew-btn-danger-lit-shadow:      0 0 24px rgba(239,68,68,0.35), 0 0 48px rgba(239,68,68,0.15), inset 0 0 12px rgba(255,120,120,0.25), inset 0 1px 0 rgba(255,255,255,0.35);
+  --dew-btn-danger-lit-shadow-hover: 0 0 32px rgba(239,68,68,0.4), 0 0 64px rgba(239,68,68,0.18), inset 0 0 16px rgba(255,120,120,0.3), inset 0 1px 0 rgba(255,255,255,0.4);
+  --dew-btn-danger-lit-text-shadow: 0 0 10px rgba(239,68,68,0.5);
+
+  /* 输入框 */
+  --dew-input-bg:            rgba(255, 255, 255, 0.15);
+  --dew-input-bg-hover:      rgba(255, 255, 255, 0.22);
+  --dew-input-bg-focus:      rgba(255, 255, 255, 0.3);
+  --dew-input-border:        rgba(255, 255, 255, 0.25);
+  --dew-input-border-hover:  rgba(255, 255, 255, 0.35);
+  --dew-input-border-focus:  rgba(255, 255, 255, 0.5);
+  --dew-input-shadow:        0 2px 8px rgba(0,0,0,0.04), inset 0 0 0 0.5px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+  --dew-input-shadow-focus:  0 0 16px rgba(255,255,255,0.15), 0 0 32px rgba(255,255,255,0.06), 0 2px 12px rgba(0,0,0,0.06), inset 0 0 0 0.5px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.45);
+  --dew-input-text:          #374151;
+  --dew-input-placeholder:   #9ca3af;
+  --dew-input-error-border:  rgba(239, 68, 68, 0.5);
+  --dew-input-error-shadow:  0 0 16px rgba(239,68,68,0.12), 0 0 32px rgba(239,68,68,0.05), inset 0 0 0 0.5px rgba(239,68,68,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  --dew-input-glow-color:    rgba(255, 255, 255, 0.08);
+  --dew-input-glow-error:    rgba(239, 68, 68, 0.08);
+  --dew-input-clear-hover-bg: rgba(0, 0, 0, 0.06);
+  --dew-input-expand-width:  160px;
+  --dew-input-expand-width-focus: 280px;
+
+  /* 光效层（折射/高光/涟漪） */
+  --dew-glow-indicator-bg:     rgba(255, 255, 255, 0.45);
+  --dew-glow-indicator-shadow: 0 0 16px rgba(255,255,255,0.15), 0 0 32px rgba(255,255,255,0.06), inset 0 0 8px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.4);
+  --dew-glow-highlight:        rgba(255, 255, 255, 0.5);
+  --dew-glow-ripple:           rgba(255, 255, 255, 0.25);
+  --dew-glow-text-active:      0 0 6px rgba(255, 255, 255, 0.3);
+
+  /* 按钮栏 badge */
+  --dew-bar-badge-bg:    rgba(239, 68, 68, 0.15);
+  --dew-bar-badge-color: #ef4444;
+
+  /* 卡片 tint 色彩底色 */
+  --dew-tint-primary-from: rgba(59,130,246,0.3);
+  --dew-tint-primary-to:   rgba(99,102,241,0.2);
+  --dew-tint-success-from: rgba(34,197,94,0.3);
+  --dew-tint-success-to:   rgba(16,185,129,0.2);
+  --dew-tint-warning-from: rgba(245,158,11,0.3);
+  --dew-tint-warning-to:   rgba(251,146,60,0.2);
+  --dew-tint-danger-from:  rgba(239,68,68,0.3);
+  --dew-tint-danger-to:    rgba(244,63,94,0.2);
+  --dew-tint-info-from:    rgba(6,182,212,0.3);
+  --dew-tint-info-to:      rgba(59,130,246,0.2);
+  --dew-tint-default-from: rgba(59,130,246,0.3);
+  --dew-tint-default-to:   rgba(139,92,246,0.2);
+
+  /* 卡片 */
+  --dew-card-bg:           rgba(255, 255, 255, 0.4);
+  --dew-card-bg-hover:     rgba(255, 255, 255, 0.5);
+  --dew-card-border:       rgba(255, 255, 255, 0.35);
+  /* 弹窗扁平容器专用：不透明实色（glass 弹窗对比度不足，09-15 容器实/操作玻璃分层） */
+  --dew-dialog-bg:         #ffffff;
+  --dew-card-shadow:       0 2px 12px rgba(0, 0, 0, 0.04), inset 0 0 0 0.5px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  --dew-card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.07), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  --dew-card-divider:      rgba(0, 0, 0, 0.04);
+
+  /* 卡片 elevated */
+  --dew-card-elevated-bg:           rgba(255, 255, 255, 0.5);
+  --dew-card-elevated-bg-hover:     rgba(255, 255, 255, 0.6);
+  --dew-card-elevated-shadow:       0 4px 20px rgba(0, 0, 0, 0.06), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --dew-card-elevated-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.09), inset 0 0 0 0.5px rgba(255, 255, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+
+  /* 卡片 inset */
+  --dew-card-inset-bg:           rgba(255, 255, 255, 0.2);
+  --dew-card-inset-bg-hover:     rgba(255, 255, 255, 0.38);
+  --dew-card-inset-border:       rgba(255, 255, 255, 0.2);
+  --dew-card-inset-border-hover: rgba(255, 255, 255, 0.32);
+  --dew-card-inset-shadow:       inset 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+  --dew-card-inset-shadow-hover: inset 0 1px 6px rgba(0, 0, 0, 0.06), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+
+  /* 卡片 glass */
+  --dew-card-glass-bg:           rgba(255, 255, 255, 0.15);
+  --dew-card-glass-bg-hover:     rgba(255, 255, 255, 0.25);
+  --dew-card-glass-border:       rgba(255, 255, 255, 0.25);
+  --dew-card-glass-shadow:       0 4px 24px rgba(0, 0, 0, 0.05), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  --dew-card-glass-shadow-hover: 0 10px 36px rgba(0, 0, 0, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  /* 卡片 flat（纯色扁平，无 glass，阅读/文档场景） */
+  --dew-card-flat-bg:           #ffffff;
+  --dew-card-flat-bg-hover:     #f9fafb;
+  --dew-card-flat-border:       rgba(0, 0, 0, 0.06);
+  --dew-card-flat-shadow:       0 1px 2px rgba(0, 0, 0, 0.04);
+  --dew-card-flat-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --dew-card-flat-divider:      rgba(0, 0, 0, 0.06);
+
+  /* 浮岛（Dynamic Island，液态玻璃） */
+  --dew-island-bg:     rgba(255, 255, 255, 0.15);
+  --dew-island-border: rgba(255, 255, 255, 0.25);
+  --dew-island-radius: var(--radius-xl);
+  --dew-island-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+  /* 开关 */
+  --dew-switch-bg:              rgba(120, 120, 128, 0.2);
+  --dew-switch-bg-active:       rgba(59, 130, 246, 0.55);
+  --dew-switch-border:          rgba(0, 0, 0, 0.06);
+  --dew-switch-border-active:   rgba(59, 130, 246, 0.35);
+  --dew-switch-shadow:          inset 0 1px 3px rgba(0,0,0,0.08);
+  --dew-switch-shadow-active:   inset 0 1px 3px rgba(59,130,246,0.15), 0 0 12px rgba(59,130,246,0.15);
+  --dew-switch-thumb-bg:        rgba(255, 255, 255, 0.95);
+  --dew-switch-thumb-shadow:    0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
+  --dew-switch-thumb-shadow-hover: 0 2px 6px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.12);
+  --dew-switch-thumb-shadow-active: 0 1px 4px rgba(59,130,246,0.25), 0 1px 2px rgba(0,0,0,0.1);
+  --dew-switch-thumb-transform: translateY(-0.5px) scale(1.05);
+
+  /* 浮层（iOS 风格，纯色无 glass） */
+  --dew-popover-bg:          #ffffff;
+  --dew-popover-border:      transparent;
+  --dew-popover-radius:      14px;
+  --dew-popover-shadow:      0 2px 12px rgba(0,0,0,0.08);
+  --dew-popover-text:        #1f2937;
+  --dew-popover-item-hover:  rgba(0, 0, 0, 0.04);
+
+  /* 按钮栏 */
+  --dew-bar-bg:       rgba(255, 255, 255, 0.12);
+  --dew-bar-border:   rgba(255, 255, 255, 0.2);
+  --dew-bar-shadow:   0 2px 12px rgba(0,0,0,0.04), inset 0 0 0 0.5px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.25);
+  --dew-bar-text:     rgba(55, 65, 81, 0.6);
+  --dew-bar-text-active: #1f2937;
+  --dew-bar-text-hover: rgba(55, 65, 81, 0.85);
+
+  /* 进度条 DewProgress（light：透明如水的蓝青填充 + 玻璃高光） */
+  --dew-progress-track-bg:         rgba(127, 127, 127, 0.12);
+  --dew-progress-track-shadow:     inset 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
+  --dew-progress-fill-bg:          linear-gradient(90deg, rgba(59, 130, 246, 0.55) 0%, rgba(56, 189, 248, 0.50) 100%);
+  --dew-progress-fill-highlight:   rgba(255, 255, 255, 0.65);
+  --dew-progress-fill-shadow:      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  /* 骨架占位 DewSkeleton（light：浅灰半透，贴玻璃底自然） */
+  --dew-skeleton-bg:               rgba(0, 0, 0, 0.06);
+}
+
+/* ━━━━ 暗色模式覆盖 ━━━━ */
+.theme-dark {
+  /* 文字 */
+  --dew-text:         rgba(255, 255, 255, 0.88);
+  --dew-text-heading: rgba(255, 255, 255, 0.92);
+  --dew-text-muted:   rgba(255, 255, 255, 0.55);
+  --dew-text-faint:   rgba(255, 255, 255, 0.35);
+
+  /* 按钮 glass */
+  --dew-btn-bg:       rgba(255, 255, 255, 0.08);
+  --dew-btn-bg-hover: rgba(255, 255, 255, 0.14);
+  --dew-btn-border:   rgba(255, 255, 255, 0.12);
+  --dew-btn-shadow:   0 2px 12px rgba(0,0,0,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.12);
+  --dew-btn-shadow-hover: 0 6px 24px rgba(0,0,0,0.3), inset 0 0 0 0.5px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.18);
+
+  /* 按钮 ghost */
+  --dew-ghost-hover-bg:   rgba(255, 255, 255, 0.06);
+  --dew-ghost-hover-text: rgba(255, 255, 255, 0.88);
+
+  /* 按钮 danger */
+  --dew-btn-danger-bg:          rgba(239, 68, 68, 0.2);
+  --dew-btn-danger-bg-hover:    rgba(239, 68, 68, 0.32);
+  --dew-btn-danger-border:      rgba(239, 68, 68, 0.3);
+  --dew-btn-danger-color:       #f87171;
+  --dew-btn-danger-shadow:      0 2px 8px rgba(239,68,68,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+  --dew-btn-danger-shadow-hover: 0 6px 24px rgba(239,68,68,0.3), inset 0 0 0 0.5px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.15);
+  --dew-btn-danger-text-shadow: 0 0 12px rgba(239,68,68,0.4);
+
+  /* 按钮 lit（白光点亮 → 暗色下偏冷光） */
+  --dew-btn-lit-bg:          rgba(255, 255, 255, 0.28);
+  --dew-btn-lit-bg-hover:    rgba(255, 255, 255, 0.36);
+  --dew-btn-lit-border:      rgba(255, 255, 255, 0.35);
+  --dew-btn-lit-color:       rgba(255, 255, 255, 0.95);
+  --dew-btn-lit-shadow:      0 0 24px rgba(255,255,255,0.15), 0 0 48px rgba(255,255,255,0.06), inset 0 0 12px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.25);
+  --dew-btn-lit-shadow-hover: 0 0 32px rgba(255,255,255,0.22), 0 0 64px rgba(255,255,255,0.1), inset 0 0 16px rgba(255,255,255,0.18), inset 0 1px 0 rgba(255,255,255,0.3);
+  --dew-btn-lit-text-shadow: 0 0 10px rgba(255,255,255,0.35);
+
+  /* 按钮 danger lit（红色光焰 → 暗色下更炽热） */
+  --dew-btn-danger-lit-bg:          rgba(239, 68, 68, 0.5);
+  --dew-btn-danger-lit-bg-hover:    rgba(239, 68, 68, 0.6);
+  --dew-btn-danger-lit-border:      rgba(239, 68, 68, 0.55);
+  --dew-btn-danger-lit-color:       #fff;
+  --dew-btn-danger-lit-shadow:      0 0 28px rgba(239,68,68,0.4), 0 0 56px rgba(239,68,68,0.18), inset 0 0 14px rgba(255,120,120,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+  --dew-btn-danger-lit-shadow-hover: 0 0 36px rgba(239,68,68,0.5), 0 0 72px rgba(239,68,68,0.22), inset 0 0 18px rgba(255,120,120,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
+  --dew-btn-danger-lit-text-shadow: 0 0 12px rgba(239,68,68,0.6);
+
+  /* 输入框 */
+  --dew-input-bg:            rgba(255, 255, 255, 0.08);
+  --dew-input-bg-hover:      rgba(255, 255, 255, 0.12);
+  --dew-input-bg-focus:      rgba(255, 255, 255, 0.16);
+  --dew-input-border:        rgba(255, 255, 255, 0.12);
+  --dew-input-border-hover:  rgba(255, 255, 255, 0.18);
+  --dew-input-border-focus:  rgba(255, 255, 255, 0.3);
+  --dew-input-shadow:        0 2px 8px rgba(0,0,0,0.15), inset 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08);
+  --dew-input-shadow-focus:  0 0 20px rgba(255,255,255,0.1), 0 0 40px rgba(255,255,255,0.04), 0 2px 12px rgba(0,0,0,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.18);
+  --dew-input-text:          rgba(255, 255, 255, 0.88);
+  --dew-input-placeholder:   rgba(255, 255, 255, 0.3);
+  --dew-input-error-border:  rgba(248, 113, 113, 0.5);
+  --dew-input-error-shadow:  0 0 16px rgba(248,113,113,0.15), 0 0 32px rgba(248,113,113,0.06), inset 0 0 0 0.5px rgba(248,113,113,0.2), inset 0 1px 0 rgba(255,255,255,0.08);
+  --dew-input-glow-color:    rgba(255, 255, 255, 0.06);
+  --dew-input-glow-error:    rgba(248, 113, 113, 0.1);
+  --dew-input-clear-hover-bg: rgba(255, 255, 255, 0.08);
+  --dew-input-expand-width:  160px;
+  --dew-input-expand-width-focus: 280px;
+
+  /* 光效层 */
+  --dew-glow-indicator-bg:     rgba(255, 255, 255, 0.1);
+  --dew-glow-indicator-shadow: 0 0 12px rgba(255,255,255,0.08), 0 0 24px rgba(255,255,255,0.03), inset 0 0 6px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.15);
+  --dew-glow-highlight:        rgba(255, 255, 255, 0.15);
+  --dew-glow-ripple:           rgba(255, 255, 255, 0.1);
+  --dew-glow-text-active:      0 0 6px rgba(255, 255, 255, 0.2);
+
+  /* 按钮栏 badge */
+  --dew-bar-badge-bg:    rgba(239, 68, 68, 0.2);
+  --dew-bar-badge-color: #f87171;
+
+  /* 卡片 */
+  --dew-card-bg:           rgba(255, 255, 255, 0.06);
+  --dew-card-bg-hover:     rgba(255, 255, 255, 0.1);
+  --dew-card-border:       rgba(255, 255, 255, 0.1);
+  /* 弹窗扁平容器专用：不透明实色（与 CampHome ring-hole 同款防透色） */
+  --dew-dialog-bg:         #16161a;
+  --dew-card-shadow:       0 2px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --dew-card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --dew-card-divider:      rgba(255, 255, 255, 0.06);
+
+  /* 卡片 elevated */
+  --dew-card-elevated-bg:           rgba(255, 255, 255, 0.1);
+  --dew-card-elevated-bg-hover:     rgba(255, 255, 255, 0.15);
+  --dew-card-elevated-shadow:       0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --dew-card-elevated-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  /* 卡片 inset */
+  --dew-card-inset-bg:           rgba(255, 255, 255, 0.03);
+  --dew-card-inset-bg-hover:     rgba(255, 255, 255, 0.07);
+  --dew-card-inset-border:       rgba(255, 255, 255, 0.06);
+  --dew-card-inset-border-hover: rgba(255, 255, 255, 0.1);
+  --dew-card-inset-shadow:       inset 0 1px 3px rgba(0, 0, 0, 0.15), inset 0 0 0 0.5px rgba(255, 255, 255, 0.04);
+  --dew-card-inset-shadow-hover: inset 0 1px 6px rgba(0, 0, 0, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+
+  /* 卡片 glass */
+  --dew-card-glass-bg:           rgba(255, 255, 255, 0.04);
+  --dew-card-glass-bg-hover:     rgba(255, 255, 255, 0.08);
+  --dew-card-glass-border:       rgba(255, 255, 255, 0.08);
+  --dew-card-glass-shadow:       0 4px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --dew-card-glass-shadow-hover: 0 10px 36px rgba(0, 0, 0, 0.35), inset 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* 卡片 flat（纯色扁平） */
+  --dew-card-flat-bg:           #1c1c1e;
+  --dew-card-flat-bg-hover:     #242427;
+  --dew-card-flat-border:       rgba(255, 255, 255, 0.08);
+  --dew-card-flat-shadow:       0 1px 2px rgba(0, 0, 0, 0.3);
+  --dew-card-flat-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --dew-card-flat-divider:      rgba(255, 255, 255, 0.08);
+
+  /* 浮岛（Dynamic Island） */
+  --dew-island-bg:     rgba(255, 255, 255, 0.04);
+  --dew-island-border: rgba(255, 255, 255, 0.08);
+  --dew-island-radius: var(--radius-xl);
+  --dew-island-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* 开关 */
+  --dew-switch-bg:              rgba(255, 255, 255, 0.1);
+  --dew-switch-bg-active:       rgba(59, 130, 246, 0.5);
+  --dew-switch-border:          rgba(255, 255, 255, 0.08);
+  --dew-switch-border-active:   rgba(59, 130, 246, 0.3);
+  --dew-switch-shadow:          inset 0 1px 3px rgba(0,0,0,0.2);
+  --dew-switch-shadow-active:   inset 0 1px 3px rgba(59,130,246,0.2), 0 0 16px rgba(59,130,246,0.2);
+  --dew-switch-thumb-bg:        rgba(255, 255, 255, 0.9);
+  --dew-switch-thumb-shadow:    0 1px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --dew-switch-thumb-shadow-hover: 0 2px 8px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.25);
+  --dew-switch-thumb-shadow-active: 0 1px 6px rgba(59,130,246,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --dew-switch-thumb-transform: translateY(-0.5px) scale(1.05);
+
+  /* 浮层（iOS 风格） */
+  --dew-popover-bg:          #1c1c1e;
+  --dew-popover-border:      transparent;
+  --dew-popover-radius:      14px;
+  --dew-popover-shadow:      0 2px 12px rgba(0,0,0,0.3);
+  --dew-popover-text:        rgba(255, 255, 255, 0.88);
+  --dew-popover-item-hover:  rgba(255, 255, 255, 0.08);
+
+  /* 按钮栏 */
+  --dew-bar-bg:       rgba(255, 255, 255, 0.06);
+  --dew-bar-border:   rgba(255, 255, 255, 0.08);
+  --dew-bar-shadow:   0 2px 12px rgba(0,0,0,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.08);
+  --dew-bar-text:     rgba(255, 255, 255, 0.45);
+  --dew-bar-text-active: rgba(255, 255, 255, 0.9);
+  --dew-bar-text-hover: rgba(255, 255, 255, 0.7);
+
+  /* 进度条 DewProgress（dark：高亮发白光的填充 + 白色外发光） */
+  --dew-progress-track-bg:         rgba(255, 255, 255, 0.06);
+  --dew-progress-track-shadow:     inset 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --dew-progress-fill-bg:          linear-gradient(90deg, rgba(255, 255, 255, 0.95) 0%, rgba(210, 225, 255, 0.88) 100%);
+  --dew-progress-fill-highlight:   rgba(255, 255, 255, 0.9);
+  --dew-progress-fill-shadow:      0 0 10px rgba(255, 255, 255, 0.55), 0 0 22px rgba(180, 210, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  /* 骨架占位 DewSkeleton（dark：浅白半透） */
+  --dew-skeleton-bg:               rgba(255, 255, 255, 0.08);
+
+  /* Badge / Tag 的语义色底色也要加深 */
+  --color-primary-light: rgba(59, 130, 246, 0.15);
+  --color-success-light: rgba(34, 197, 94, 0.15);
+  --color-warning-light: rgba(245, 158, 11, 0.15);
+  --color-danger-light:  rgba(239, 68, 68, 0.15);
+  --color-info-light:    rgba(99, 102, 241, 0.15);
+  --color-bg-muted:      rgba(255, 255, 255, 0.06);
+  --color-text-secondary: rgba(255, 255, 255, 0.55);
+
+  /* 卡片 tint 色彩底色（暗色下稍降透明度） */
+  --dew-tint-primary-from: rgba(59,130,246,0.25);
+  --dew-tint-primary-to:   rgba(99,102,241,0.15);
+  --dew-tint-success-from: rgba(34,197,94,0.25);
+  --dew-tint-success-to:   rgba(16,185,129,0.15);
+  --dew-tint-warning-from: rgba(245,158,11,0.25);
+  --dew-tint-warning-to:   rgba(251,146,60,0.15);
+  --dew-tint-danger-from:  rgba(239,68,68,0.25);
+  --dew-tint-danger-to:    rgba(244,63,94,0.15);
+  --dew-tint-info-from:    rgba(6,182,212,0.25);
+  --dew-tint-info-to:      rgba(59,130,246,0.15);
+  --dew-tint-default-from: rgba(59,130,246,0.25);
+  --dew-tint-default-to:   rgba(139,92,246,0.15);
+}
+
+/* ── 等级徽标 LV1-4 色阶（两端共用单源；半透明底，明暗两态均可用）──
+   灰(LV1 新人) → 绿(LV2 成长) → 琥珀(LV3 进阶) → 红(LV4 满级)；
+   与语义色错位使用：这是「等级身份」不是状态语义 */
+.lv-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; line-height: 18px;
+  padding: 0 8px; border-radius: 999px; letter-spacing: 0.02em;
+}
+.lv-badge.lv-1 { color: #8a9099; background: rgba(138, 144, 153, 0.14); }
+.lv-badge.lv-2 { color: #009961; background: rgba(0, 153, 97, 0.12); }
+.lv-badge.lv-3 { color: #b57a00; background: rgba(200, 143, 20, 0.13); }
+.lv-badge.lv-4 { color: #d63a3a; background: rgba(214, 58, 58, 0.11); }

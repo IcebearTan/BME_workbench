@@ -1,0 +1,21 @@
+{
+  "name": "bme-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "pnpm --filter @bme/workbench-web dev",
+    "dev:frontend": "pnpm --filter @bme/workbench-web dev",
+    "dev:backend": "node scripts/backend.mjs dev",
+    "db:upgrade": "node scripts/backend.mjs migrate",
+    "test:backend": "node scripts/backend.mjs test",
+    "check:no-emoji": "node scripts/check-no-emoji.mjs",
+    "prebuild": "pnpm check:no-emoji",
+    "build": "pnpm --filter @bme/workbench-web build",
+    "preview": "pnpm --filter @bme/workbench-web preview",
+    "pretest:e2e": "pnpm check:no-emoji",
+    "test:e2e": "pnpm --filter @bme/workbench-web test:e2e"
+  }
+}
