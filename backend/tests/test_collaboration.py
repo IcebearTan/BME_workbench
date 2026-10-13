@@ -121,6 +121,8 @@ def test_merge_scan_includes_person_restrictions_for_another_empty_account(app,c
         'issuer':app.config['IDENTITY_ISSUER'],'subject':'999','person_id':'3'})
     assert response.status_code==200 and response.json['has_business_data']
     assert response.json['counts']['person_restrictions']==1
+    group=client.post('/api/integrations/group-usage',headers={'Authorization':header},json={'group_id':1})
+    assert group.status_code==200 and group.json['workspaces']==1 and group.json['open_items']==0
     assert client.post('/api/integrations/account-usage',json={'subject':'1'}).status_code==401
 
 

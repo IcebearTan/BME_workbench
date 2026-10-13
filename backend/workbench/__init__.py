@@ -67,6 +67,8 @@ def create_app(test_config=None, identity_provider=None):
     app.register_blueprint(files_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(directory_bp)
+    from .collab.history_routes import bp as history_bp
+    app.register_blueprint(history_bp)
     from .integrations import bp as integrations_bp
     app.register_blueprint(integrations_bp)
 

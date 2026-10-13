@@ -14,6 +14,7 @@ export const router = createRouter({
       { path: 'items/:id', name: 'work-item', component: () => import('../views/WorkItemView.vue') },
       { path: 'board', component: () => import('../components/Work/WorkBoard.vue') },
       { path: 'members', component: () => import('../views/WorkMembersView.vue') },
+      { path: 'appointments', component: () => import('../views/AppointmentHistoryView.vue') },
       { path: 'summary', component: () => import('../components/Work/WorkSummaryBoard.vue') },
       { path: 'files', component: () => import('../components/Work/WorkFilesIndex.vue') },
       { path: 'records', component: () => import('../components/Work/WorkRecordsIndex.vue') },

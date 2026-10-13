@@ -64,6 +64,16 @@ pnpm test:e2e
 
 详见 `docs/ARCHITECTURE.md` 与 `docs/IDENTITY-CONTRACT.md`。
 
+## 任职履历（本地开发，2026-10-14）
+
+工作台新增“任职履历”（`/work/appointments`），支持按人员、年份查看任期、资料来源和变更日志。训练营管理端“社团职务”的任职档案支持历史补录；换职/连任与信息纠错显式分开。已结束的历史记录不会激活账号或授予工作区权限。
+
+数据库须显式升级：训练营迁移 79（默认仅显示计划，执行时才传 `--apply`），工作台升级到 Alembic `0003`。本轮先在隔离数据库验证，再备份并升级本地开发库；本地训练营22条任职原记录保留，缺少真实事件的登记时间继续留空。生产未修改。部署时先升级两侧 schema，再按 deploy/README.md 的交接顺序发布工作台后端、训练营后端及前端。具体字段与接口见架构文档及身份契约。
+
+本次定向检查入口：工作台 backend 的 `tests/test_appointment_history.py`、frontend 的 `e2e/appointment-history.spec.js`；来源方 `scripts/test_appointment_history.py`、`scripts/test_appointment_history_mysql.py --run`（仅回环地址的临时 MySQL 库）；管理端 `admin.spec.js` 的任职档案/调整任职用例。按用户要求不扩大后续回归范围。
+
+最终定向验收：来源任职12项、SSO接入7项、工作台履历6项通过；工作台履历4项浏览器用例、管理端相关5项通过。本地 MySQL 隔离迁移及重复升级通过，工作台带存量数据的 SQLite 升级通过；4个受影响 Vue 组件编译通过。浏览器使用模拟接口，不能替代生产真实登录联调。
+
 ## Git 与后续迁移
 
 默认分支为 `main`，远端仓库为 https://github.com/IcebearTan/BME_workbench 。配套训练营改动位于两个原项目的 feature/workbench-extraction 分支。

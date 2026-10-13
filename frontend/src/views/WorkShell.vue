@@ -23,6 +23,7 @@ const isDarkMode = computed(() => store.getters.isDarkMode)
 const { me, hasAccess, isGovernance, detecting, detectFailed, detect } = useWorkAccess()
 const { todoCounts, refreshSummary, startSummaryPolling, stopSummaryPolling } = useWorkData()
 const loading = computed(() => detecting.value && !me.value && !detectFailed.value)
+const isAppointmentView = computed(() => route.path === '/work/appointments')
 const load = async () => {
   await detect(true)
   if (hasAccess.value) {
@@ -44,11 +45,13 @@ const hasSubtree = computed(() =>
 
 // ── 侧栏导航（URL 即导航；子组汇总仅 subtree 授权者渲染，路由常驻） ──
 const navItems = computed(() => {
+  if (isAppointmentView.value && !hasAccess.value) return [{ to: '/work/appointments', label: '任职履历', icon: Clock }]
   const items = [
     { to: '/work', label: '概览', icon: Odometer, badge: todoBadgeTotal.value || null },
     { to: '/work/items', label: '小组事项', icon: ChatLineSquare },
     { to: '/work/board', label: '看板', icon: DataBoard },
     { to: '/work/members', label: '成员', icon: User },
+    { to: '/work/appointments', label: '任职履历', icon: Clock },
   ]
   if (hasSubtree.value) items.push({ to: '/work/summary', label: '子组汇总', icon: OfficeBuilding })
   items.push(
@@ -129,7 +132,7 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
 
     <div class="ws-body">
       <!-- 侧栏：工作区切换器 + 导航（无资格不渲染） -->
-      <aside v-if="hasAccess" :class="['ws-side', { 'ws-side--open': isMobile && drawerOpen }]">
+      <aside v-if="hasAccess || isAppointmentView" :class="['ws-side', { 'ws-side--open': isMobile && drawerOpen }]">
         <div v-if="workspaces.length > 1" class="ws-ws-picker">
           <el-select v-model="wsId" placeholder="全部工作区" clearable size="default">
             <el-option v-for="w in workspaces" :key="w.id" :label="w.group_name" :value="w.id" />
@@ -155,20 +158,20 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
       <!-- 内容区：门禁三段式在外壳，子视图只在有资格时挂载 -->
       <main class="ws-main">
         <div class="ws-content">
-          <template v-if="loading">
+          <template v-if="loading && !isAppointmentView">
             <DewSkeleton variant="rect" :height="24" :width="180" class="sk-block" />
             <DewCard v-for="i in 3" :key="i" size="md" class="sk-block">
               <DewSkeleton variant="text" :lines="2" />
             </DewCard>
           </template>
 
-          <DewCard v-else-if="detectFailed" size="md" class="state-card">
+          <DewCard v-else-if="detectFailed && !isAppointmentView" size="md" class="state-card">
             <p class="state-text">工作台信息加载失败，请稍后重试</p>
             <DewButton size="sm" @click="load">重试</DewButton>
           </DewCard>
 
           <!-- 无资格空态：面向学员的友好说明（入口卡本就不可见，多为直达 URL） -->
-          <DewCard v-else-if="!hasAccess" size="md" class="state-card">
+          <DewCard v-else-if="!hasAccess && !isAppointmentView" size="md" class="state-card">
             <div class="empty-icon"><el-icon><Briefcase /></el-icon></div>
             <h3 class="state-title">内部工作台</h3>
             <p class="state-text">
@@ -176,6 +179,7 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
               面向已开通权限的干事与组内工作人员。如你认为自己需要访问，请联系平台负责人开通。
             </p>
             <DewButton size="sm" @click="router.push('/work/members')">查看社团组织架构</DewButton>
+            <DewButton size="sm" type="ghost" @click="router.push('/work/appointments')">查看我的任职履历</DewButton>
           </DewCard>
 
           <router-view v-else />

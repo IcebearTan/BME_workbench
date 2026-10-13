@@ -91,13 +91,20 @@ class ClubOfficer(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('club_group.id'), nullable=True, index=True)
     title = db.Column(db.String(30), nullable=False)              # 冗余：职位名（双写过渡）
     department = db.Column(db.String(50))                         # 冗余：组名（双写过渡；空=不挂组）
-    term_start = db.Column(db.Date, nullable=False)               # 任期起
+    term_start = db.Column(db.Date)
     term_end = db.Column(db.Date)                                 # 任期止（空 = 在任）
     status = db.Column(db.String(20), nullable=False, default='active', index=True)  # active / ended
     appointed_by = db.Column(db.Integer)                          # 任命操作人（审计留痕，非 FK）
     ended_by = db.Column(db.Integer)                              # 卸任操作人
     end_reason = db.Column(db.String(200))                        # 卸任原因（选填）
     scope_note = db.Column(db.String(200))                        # 任职范围描述（选填；个人主页社团身份卡展示）
+    person_id = db.Column(db.Integer, index=True)
+    org_slot_snapshot = db.Column(db.String(10))
+    record_source = db.Column(db.String(20), nullable=False, default='legacy', server_default='legacy')
+    source_note = db.Column(db.String(500))
+    historical_year = db.Column(db.Integer)
+    appointed_at = db.Column(db.DateTime)
+    ended_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 

@@ -65,6 +65,14 @@ security_version 在封禁、账号安全变更或归并等事件中更新。工
 
 回调成功 302 到工作台根路径；失败 302 到 `/login?error=<受控错误码>`。一次性 code 不进入前端状态或 localStorage。反向代理与访问日志必须避免记录回调查询参数，响应设置 no-store 和 no-referrer。深链接回跳由前端保存经过白名单限制的本站路径。
 
+## 任职历史投影扩展（2026-10-14）
+
+directory 的 officers 包含 person_id、org_slot_snapshot、record_source、source_note、historical_year、appointed_at、ended_at。person_id 由来源方按明确人员归并关系输出当前人员标识；数据库原始任职快照不被该投影改写。term_start 仅在 ended 的历史补录记录中允许为空。
+
+可选 officer_events 为与任职行关联的组织事件列表（id、kind、user_id、officer_id、operator_id、detail_json、occurred_at 等）。消费端按事件 ID 追加，只展示该人员任职关联事件；不根据这些事件直接授予权限。不推断缺失的早期任命或卸任事件。
+
+GET /api/appointments/history 接收可选 user_id、year。自身范围按本地 Account.Person 的来源人员标识核对，不按显示姓名匹配；其他人员须有本地 governance:view 或 governance:manage。年份过滤按任期覆盖范围，历史补录和未知日期不构成当前准入。
+
 ## 管理权的初次开通
 
 首次登录仅创建普通 Account 映射，不创建治理授权。经有效登录的账号可由受控的本地管理命令明确授予或撤销 governance:view，必须填写原因并留审计。governance:view 控制基础概览，governance:manage 是明确授予的工作台管理员权限。已移植的治理动作校验工作台会话、Origin 与 CSRF。

@@ -21,7 +21,7 @@ def group_usage():
     from .collab.models import WorkWorkspace
     count=WorkItem.query.join(WorkWorkspace,WorkWorkspace.id==WorkItem.workspace_id).filter(
         WorkWorkspace.club_group_id==gid, WorkItem.status.in_(('draft','open','todo','in_progress','blocked','review'))).count()
-    return jsonify(group_id=gid,open_items=count)
+    return jsonify(group_id=gid,open_items=count,workspaces=WorkWorkspace.query.filter_by(club_group_id=gid).count())
 
 
 @bp.post('/account-usage')
