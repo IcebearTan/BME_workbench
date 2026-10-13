@@ -229,6 +229,7 @@ def backfill_all(operator_id=None):
     """全部启用中的自动授组工作区重算（日巡检/脚本入口）。"""
     result = {}
     for ws in (WorkWorkspace.query
-               .filter_by(scope='group', status='active', auto_grant=True).all()):
+               .filter(WorkWorkspace.scope.in_(('group', 'club')),
+                       WorkWorkspace.status == 'active', WorkWorkspace.auto_grant.is_(True)).all()):
         result[ws.id] = backfill_workspace(ws, operator_id)
     return result

@@ -122,3 +122,16 @@ def test_merge_scan_includes_person_restrictions_for_another_empty_account(app,c
     assert response.status_code==200 and response.json['has_business_data']
     assert response.json['counts']['person_restrictions']==1
     assert client.post('/api/integrations/account-usage',json={'subject':'1'}).status_code==401
+
+
+def test_organization_updates_also_provision_the_club_workspace(app,client):
+    prepare(app,client)
+    with app.app_context():
+        db.session.add(WorkWorkspace(id=99,scope='club',auto_grant=True,status='active'))
+        db.session.commit()
+    provider=app.extensions['identity_provider']
+    provider.identity.directory['officers'].append({'id':12,'user_id':3,'title_id':1,'group_id':2,
+        'title':'组长','term_start':'2020-01-01','status':'active'})
+    assert client.get('/api/work/me').status_code==200
+    with app.app_context():
+        assert WorkAccessGrant.query.filter_by(user_id=3,workspace_id=99,status='active').first() is not None
