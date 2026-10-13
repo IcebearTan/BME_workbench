@@ -31,3 +31,4 @@ artifacts/
 *.p12
 *.pfx
 coverage/
+frontend/public/

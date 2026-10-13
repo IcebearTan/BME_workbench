@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from urllib.parse import urlencode, urlsplit
 import requests
 from .errors import ApiError, unavailable
+from .transport import lan_url
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,7 @@ class Identity:
     account_active: bool
     person_active: bool
     community_active: bool
+    directory: dict | None = None
 
     @property
     def admitted(self):
@@ -49,7 +51,9 @@ class HttpIdentityProvider:
             raise ValueError("HTTP identity provider requires every dedicated client setting")
         for name in ("IDENTITY_AUTHORIZE_URL", "IDENTITY_EXCHANGE_URL", "IDENTITY_STATUS_URL"):
             parsed = urlsplit(config[name])
-            if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
+            allowed_lan = config.get('LAN_HTTP') and lan_url(config[name], loopback=name != 'IDENTITY_AUTHORIZE_URL')
+            if ((parsed.scheme != "https" and not allowed_lan) or not parsed.netloc
+                    or parsed.username or parsed.query or parsed.fragment):
                 raise ValueError(f"{name} must be an HTTPS URL without credentials, query or fragment")
 
     def authorize(self, *, state, challenge, redirect_uri):
@@ -70,7 +74,7 @@ class HttpIdentityProvider:
             if (endpoint == "IDENTITY_EXCHANGE_URL" and response.status_code == 400
                     and response.json() == {"error": "INVALID_CODE"}):
                 raise ApiError("ADMISSION_DENIED", "登录票据无效，请重新登录", 403)
-            if response.status_code != 200 or len(response.content) > 16 * 1024:
+            if response.status_code != 200 or len(response.content) > 1024 * 1024:
                 raise unavailable()
             data = response.json()
             if not isinstance(data, dict) or data.get("audience") != self.config["IDENTITY_CLIENT_ID"]:
@@ -85,7 +89,10 @@ class HttpIdentityProvider:
             flags = {key: data.get(key) for key in ("account_active", "person_active", "community_active")}
             if any(type(value) is not bool for value in flags.values()):
                 raise unavailable()
-            return Identity(**strings, **flags)
+            directory = data.get('directory')
+            if directory is not None and not isinstance(directory, dict):
+                raise unavailable()
+            return Identity(**strings, **flags, directory=directory)
         except (requests.RequestException, ValueError, TypeError):
             raise unavailable() from None
 

@@ -85,7 +85,7 @@ class PermissionGrant(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"), primary_key=True)
     permission = db.Column(db.String(64), primary_key=True)
     created_at = db.Column(db.DateTime, nullable=False, default=now)
-    __table_args__ = (db.CheckConstraint("permission = 'governance:view'", name="permission"),)
+    __table_args__ = (db.CheckConstraint("permission IN ('governance:view', 'governance:manage')", name="permission"),)
 
 
 class AuditEvent(db.Model):

@@ -15,6 +15,14 @@ def health():
 @api.get("/workspaces")
 @require_actor()
 def workspaces():
+    from flask import current_app
+    if current_app.config.get('COLLAB_ENABLED'):
+        from .collab.compat import _current_user
+        from .collab.models import WorkWorkspace, ClubGroup
+        from .collab.services.access import workspace_access
+        visible = workspace_access(_current_user())
+        return jsonify(items=[{'id': w.id, 'name': (db.session.get(ClubGroup, w.club_group_id).name if w.club_group_id else '社团工作区'), 'role': visible[w.id]}
+            for w in WorkWorkspace.query.filter(WorkWorkspace.id.in_(visible)).all()])
     account = current_actor()["account"]
     restricted = select(PersonRestriction.workspace_id).where(PersonRestriction.person_id == account.person_id)
     rows = db.session.execute(select(Workspace, Membership.role)
@@ -28,5 +36,9 @@ def workspaces():
 @require_actor("governance:view")
 def overview():
     # Governance is metadata-only. This grant confers no workspace membership.
+    from flask import current_app
+    if current_app.config.get('COLLAB_ENABLED'):
+        from .collab.models import WorkWorkspace
+        return jsonify(members=db.session.scalar(select(func.count()).select_from(Account)), workspaces=WorkWorkspace.query.count(), scope='workbench')
     return jsonify(members=db.session.scalar(select(func.count()).select_from(Account)),
                    workspaces=db.session.scalar(select(func.count()).select_from(Workspace)), scope="workbench")

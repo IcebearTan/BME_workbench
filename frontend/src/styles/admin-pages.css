@@ -1,0 +1,274 @@
+/* 管理页通用结构样式（批次 5 收编）—— 单源定义,替代原 11 个组件 scoped 里
+   各自重复/漂移的 .header-container / .form-inline / .pagination-wrapper。
+   页面骨架约定:页头(.page-header) + 表格容器(DewCard,no-hover) + 分页(.pagination-wrapper)。
+   颜色一律走 tokens:variables.css(--primary-color 等)与 @bme/styles/tokens.css(--dew-*)。 */
+
+/* ── 页头:左侧大标题 + 右侧筛选/操作区 ── */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 10px;
+    min-height: 40px;
+}
+
+.page-title {
+    display: inline-block;
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--primary-color);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ── 页头内联筛选表单 ── */
+.form-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0;
+}
+
+.form-inline .el-form-item {
+    margin: 0;
+}
+
+/* ── 分页条 ── */
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+}
+
+/* ── el-dialog 底部按钮行(原先仅 1 个组件定义,其余 6 处悬空) ── */
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* ===== LLM 家族页(LLMProjectManage / LLMQuotaRequests / LLMUserMonitor 共用) =====
+   收编自三组件 scoped 的重复定义(批次 5)。刻意差异不收编:
+   .chart-tab.active 与 .model-name 的主色在「项目管理」为紫、在「用户看板」为蓝,各自本地定义。 */
+
+.admin-llm-page {
+    padding: 24px 28px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: #f5f7fb;
+    min-height: 100%;
+}
+
+/* Hero(共同视觉;flex 布局差异由组件本地补充) */
+.page-hero {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 60%, #faf5ff 100%);
+    border: 1px solid #e4e7ef;
+    border-radius: 14px;
+    padding: 22px 28px;
+}
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3b82f6;
+    margin-bottom: 6px;
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; }
+.hero-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    background: linear-gradient(135deg, #1e40af, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.hero-sub { font-size: 13px; color: #64748b; margin: 0; }
+.hero-btn { flex-shrink: 0; }
+
+/* 区块卡 */
+.section-card {
+    background: #fff;
+    border: 1px solid #e4e7ef;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+}
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f2f7;
+    background: #fafbff;
+}
+.section-title-row { display: flex; align-items: center; gap: 8px; }
+.section-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+}
+.section-icon svg { width: 14px; height: 14px; }
+.section-icon-blue  { background: #dbeafe; color: #2563eb; }
+.section-icon-violet { background: #ede9fe; color: #7c3aed; }
+.section-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+
+/* 主表格表头 */
+.main-table .el-table__header-wrapper th {
+    background: #fafbff !important;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* 表格通用单元格 */
+.user-cell { display: flex; align-items: center; gap: 10px; }
+.user-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6, #7c3aed);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+.user-email { font-size: 11px; color: #94a3b8; }
+.muted-text { font-size: 12px; color: #94a3b8; }
+.spend-value { font-weight: 600; color: #d97706; font-size: 13px; }
+.action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.table-footer {
+    padding: 12px 20px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #f0f2f7;
+}
+
+/* 活动趋势 Drawer */
+.activity-drawer { display: flex; flex-direction: column; gap: 20px; padding: 4px 0; }
+.activity-toolbar { display: flex; align-items: center; gap: 10px; }
+.act-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.act-stat-card {
+    background: #f8faff;
+    border: 1px solid #e4e7ef;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.act-stat-label { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+.act-stat-val { font-size: 18px; font-weight: 700; }
+.act-blue   { color: #2563eb; }
+.act-violet { color: #7c3aed; }
+.act-emerald { color: #059669; }
+.act-amber  { color: #d97706; }
+.act-red    { color: #dc2626; }
+.act-slate  { color: #475569; }
+.act-section { display: flex; flex-direction: column; gap: 12px; }
+.act-section-header { display: flex; align-items: center; justify-content: space-between; }
+.act-section-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+.act-section-sub { font-size: 12px; color: #94a3b8; }
+
+/* 趋势图 */
+.chart-wrap {
+    background: #f8faff;
+    border: 1px solid #e4e7ef;
+    border-radius: 8px;
+    padding: 12px 12px 4px;
+}
+.trend-svg { width: 100%; height: 110px; display: block; }
+.chart-x-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #94a3b8;
+    padding: 2px 0 0;
+}
+
+/* 模型分布表 */
+.model-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.model-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e4e7ef;
+    background: #f8faff;
+}
+.model-table td {
+    padding: 8px;
+    border-bottom: 1px solid #f0f2f7;
+    color: #0f172a;
+    vertical-align: middle;
+}
+.model-table tr:last-child td { border-bottom: none; }
+.num-col { text-align: right; }
+.spend-col { color: #d97706; font-weight: 600; }
+.rate-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.rate-good { background: #d1fae5; color: #059669; }
+.rate-warn { background: #fef3c7; color: #d97706; }
+.rate-na   { background: #f1f5f9; color: #94a3b8; }
+
+/* ── 管理数据页允许选中文本(原 8 个组件各自重复定义) ── */
+.selectable {
+    user-select: text;
+}
+
+/* ── LLM 家族页暗色适配（09-22）：三页原为纯亮色硬编码，暗色下白卡配浅字、
+   蓝底蓝字（filter-tab/duration-tag/chip-active 等）不可读。按暗色 tokens 重投影，
+   卡片走实心底（--bg-primary），彩色徽章走同色系半透明底+亮字。 ── */
+.theme-dark .admin-llm-page { background: var(--bg-secondary); }
+.theme-dark .page-hero {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 60%, rgba(139, 92, 246, 0.10) 100%);
+    border-color: var(--border-light);
+}
+.theme-dark .hero-title { background: linear-gradient(135deg, #93c5fd, #c4b5fd); }
+.theme-dark .hero-sub { color: #94a3b8; }
+.theme-dark .section-card {
+    background: var(--bg-primary);
+    border-color: var(--border-light);
+    box-shadow: none;
+}
+.theme-dark .section-header { background: rgba(255, 255, 255, 0.03); border-bottom-color: var(--border-light); }
+.theme-dark .section-title { color: var(--text-primary); }
+.theme-dark .section-icon-blue { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+.theme-dark .section-icon-violet { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+.theme-dark .main-table .el-table__header-wrapper th { background: rgba(255, 255, 255, 0.04) !important; color: #9ca3af; }
+.theme-dark .user-name { color: var(--text-primary); }
+.theme-dark .table-footer { border-top-color: var(--border-light); }
+.theme-dark .act-stat-card, .theme-dark .chart-wrap { background: rgba(255, 255, 255, 0.03); border-color: var(--border-light); }
+.theme-dark .act-section-title { color: var(--text-primary); }
+.theme-dark .act-blue { color: #93c5fd; }
+.theme-dark .act-violet { color: #c4b5fd; }
+.theme-dark .act-emerald { color: #34d399; }
+.theme-dark .act-amber { color: #fbbf24; }
+.theme-dark .act-red { color: #f87171; }
+.theme-dark .act-slate { color: #cbd5e1; }
+.theme-dark .model-table th { background: rgba(255, 255, 255, 0.04); color: #9ca3af; border-bottom-color: var(--border-light); }
+.theme-dark .model-table td { color: #e5e7eb; border-bottom-color: var(--border-light); }
+.theme-dark .rate-good { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.theme-dark .rate-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.theme-dark .rate-na { background: rgba(148, 163, 184, 0.14); color: #94a3b8; }
+.theme-dark .spend-value { color: #fbbf24; }

@@ -25,7 +25,8 @@ async function logout() {
 </script>
 
 <template>
-  <div class="work-surface">
+  <RouterView v-if="route.path === '/work' || route.path.startsWith('/work/')" />
+  <div v-else class="work-surface">
     <a class="skip-link" href="#main-content">跳到主要内容</a>
     <header class="app-header">
       <button v-if="authenticated" type="button" class="icon-button mobile-menu" :aria-expanded="drawerOpen" aria-controls="work-nav" aria-label="切换导航" @click="drawerOpen = !drawerOpen">

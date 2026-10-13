@@ -1,0 +1,23 @@
+[program:bme_workbench]
+directory=/opt/BME_workbench/backend
+command=/opt/BME_workbench/backend/.venv/bin/gunicorn --bind 127.0.0.1:5003 --workers 2 --timeout 40 --access-logfile /var/log/bme-workbench/access.log --access-logformat "%%(m)s %%(U)s %%(s)s" wsgi:app
+user=bme-workbench
+environment=WORKBENCH_ENV_FILE="/etc/bme-workbench.env",TZ="Asia/Shanghai"
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stdout_logfile=/var/log/bme-workbench/http.log
+stderr_logfile=/var/log/bme-workbench/http-error.log
+
+[program:bme_workbench_worker]
+directory=/opt/BME_workbench/backend
+command=/opt/BME_workbench/backend/.venv/bin/python worker.py
+user=bme-workbench
+environment=WORKBENCH_ENV_FILE="/etc/bme-workbench.env",TZ="Asia/Shanghai"
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+stdout_logfile=/var/log/bme-workbench/worker.log
+stderr_logfile=/var/log/bme-workbench/worker-error.log

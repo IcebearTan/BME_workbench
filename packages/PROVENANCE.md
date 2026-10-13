@@ -11,3 +11,5 @@
 This repository builds without the source checkout. Changes to these packages are local to Workbench until explicitly synchronized; do not silently follow files in an adjacent directory. A future shared package release may replace this snapshot once a versioned distribution exists.
 
 No new open-source licensing grant is made by this snapshot. Preserve the original ownership and any third-party notices already present in copied assets.
+
+The collaboration migration additionally imports packages/editor and work views/services from the same source frontend commit, and backend work-domain services/models from BME_platform_flask commit 10f03de7b944bf29e12c4d82b418a03f3df14e91. Training models/authentication/storage are replaced by explicit workbench adapters; no training passwords are copied.

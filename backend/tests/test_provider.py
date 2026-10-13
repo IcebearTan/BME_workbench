@@ -98,3 +98,16 @@ def test_mysql_identity_columns_preserve_case():
     for model in (Account, Person):
         ddl = str(CreateTable(model.__table__).compile(dialect=mysql.dialect()))
         assert ddl.count("COLLATE utf8mb4_bin") == 2
+
+
+def test_campus_http_is_explicit_ip_only_and_backchannel_loopback():
+    values=config()
+    values.update(LAN_HTTP=True,IDENTITY_AUTHORIZE_URL='http://172.25.56.83:8080/workbench-login',
+                  IDENTITY_EXCHANGE_URL='http://127.0.0.1:5000/workbench-sso/exchange',
+                  IDENTITY_STATUS_URL='http://127.0.0.1:5000/workbench-sso/status')
+    assert HttpIdentityProvider(values).configured
+    values['IDENTITY_EXCHANGE_URL']='http://172.25.56.83:8080/api/workbench-sso/exchange'
+    with pytest.raises(ValueError):HttpIdentityProvider(values)
+    values['IDENTITY_EXCHANGE_URL']='http://127.0.0.1:5000/workbench-sso/exchange'
+    values['IDENTITY_AUTHORIZE_URL']='http://public.example/authorize'
+    with pytest.raises(ValueError):HttpIdentityProvider(values)

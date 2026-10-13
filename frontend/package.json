@@ -8,7 +8,10 @@
     "dev:test": "vite --mode test --host 127.0.0.1 --port 18083 --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 8083 --strictPort",
-    "test:e2e": "playwright test -c e2e/playwright.config.js"
+    "test:e2e": "playwright test -c e2e/playwright.config.js",
+    "predev": "node ../packages/styles/copy-to-public.mjs",
+    "predev:test": "node ../packages/styles/copy-to-public.mjs",
+    "prebuild": "node ../packages/styles/copy-to-public.mjs"
   },
   "dependencies": {
     "@bme/dew-ui": "workspace:*",
@@ -18,11 +21,14 @@
     "element-plus": "2.14.5",
     "vue": "3.5.41",
     "vue-router": "4.6.4",
-    "vuex": "4.1.0"
+    "vuex": "4.1.0",
+    "@bme/editor": "workspace:*",
+    "md-editor-v3": "6.5.5"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
     "@vitejs/plugin-vue": "5.2.4",
-    "vite": "5.4.21"
+    "vite": "5.4.21",
+    "unplugin-vue-components": "32.1.0"
   }
 }

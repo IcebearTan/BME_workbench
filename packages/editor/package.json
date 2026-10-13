@@ -1,0 +1,13 @@
+{
+  "name": "@bme/editor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "BME 共享 markdown 编辑配置：md-editor-v3 自托管 highlight.js（禁外网 CDN）",
+  "exports": {
+    "./md-setup": "./md-setup.js"
+  },
+  "peerDependencies": {
+    "md-editor-v3": ">=6.0.0"
+  }
+}

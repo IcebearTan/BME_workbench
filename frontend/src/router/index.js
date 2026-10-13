@@ -6,8 +6,19 @@ import WorkspacesView from '../views/WorkspacesView.vue'
 import ManageView from '../views/ManageView.vue'
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/work', component: () => import('../views/WorkShell.vue'), meta: { protected: true }, children: [
+      { path: '', name: 'work', component: () => import('../views/WorkOverview.vue') },
+      { path: 'items', component: () => import('../views/WorkItemsTable.vue') },
+      { path: 'items/:id', name: 'work-item', component: () => import('../views/WorkItemView.vue') },
+      { path: 'board', component: () => import('../components/Work/WorkBoard.vue') },
+      { path: 'members', component: () => import('../views/WorkMembersView.vue') },
+      { path: 'summary', component: () => import('../components/Work/WorkSummaryBoard.vue') },
+      { path: 'files', component: () => import('../components/Work/WorkFilesIndex.vue') },
+      { path: 'records', component: () => import('../components/Work/WorkRecordsIndex.vue') },
+      { path: 'governance', component: () => import('../components/WorkGrantManage.vue') },
+    ] },
     { path: '/', name: 'workspaces', component: WorkspacesView, meta: { protected: true, title: '我的工作空间' } },
     { path: '/manage', name: 'manage', component: ManageView, meta: { protected: true, permission: 'governance:view', title: '工作台管理' } },
     { path: '/login', name: 'login', component: AccessView, meta: { title: '登录' } },
@@ -29,14 +40,20 @@ export function accessRoute(returnPath = '/') {
 }
 
 router.beforeEach(async (to) => {
+  if (to.path === '/work' && typeof to.query.tab === 'string') {
+    const tabs = { todo: '/work', group: '/work/items', board: '/work/board', summary: '/work/summary', files: '/work/files', records: '/work/records' }
+    const query = { ...to.query }; delete query.tab
+    return { path: tabs[to.query.tab] || '/work', query }
+  }
   if (store.state.identityState === 'unknown' || to.meta.protected) await store.dispatch('refreshIdentity')
   if (to.meta.protected) {
-    const redirect = accessRoute(to.path)
+    const redirect = accessRoute(to.fullPath)
     if (redirect) return redirect
     if (to.meta.permission && !store.state.permissions.includes(to.meta.permission)) return { name: 'forbidden' }
     if (to.path === '/') {
       const returnPath = takeReturnPath()
       if (returnPath !== '/') return returnPath
+      if (import.meta.env.VITE_COLLAB_ENABLED === 'true') return '/work'
     }
   }
   if (to.name === 'login' && store.getters.authenticated && !to.query.error) return safeReturnPath(to.query.redirect)

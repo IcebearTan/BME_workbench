@@ -7,7 +7,7 @@ from functools import wraps
 from flask import Blueprint, current_app, jsonify, redirect, request
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
-from .extensions import db
+from .extensions import db, limiter
 from .errors import ApiError, denied, unavailable
 from .models import Account, AuditEvent, CodeConsumption, LoginAttempt, PermissionGrant, Person, Session, now
 
@@ -27,7 +27,7 @@ def provider():
 
 
 def redirect_uri():
-    return current_app.config["PUBLIC_ORIGIN"] + "/api/auth/callback"
+    return current_app.config["PUBLIC_ORIGIN"] + current_app.config.get('BASE_PATH', '') + "/api/auth/callback"
 
 
 def same_origin():
@@ -36,7 +36,8 @@ def same_origin():
 
 
 def cookie_options(path):
-    return dict(secure=current_app.config["COOKIE_SECURE"], httponly=True, samesite="Lax", path=path)
+    return dict(secure=current_app.config["COOKIE_SECURE"], httponly=True, samesite="Lax",
+                path=current_app.config.get('BASE_PATH', '') + path)
 
 
 def invalidate_session(session, reason="Local or upstream admission/session validation failed"):
@@ -85,6 +86,9 @@ def current_actor():
     permissions = list(db.session.scalars(select(PermissionGrant.permission).where(PermissionGrant.account_id == account.id)))
     result = {"account": account, "identity": identity, "permissions": permissions, "raw_session": raw}
     request._workbench_actor = result
+    if current_app.config.get('COLLAB_ENABLED'):
+        from .collab.directory import sync_directory
+        sync_directory(identity.directory)
     return result
 
 
@@ -108,6 +112,7 @@ def status():
 
 
 @auth.post("/login")
+@limiter.limit('10/minute')
 def login():
     same_origin()
     if not provider().configured:
@@ -194,15 +199,15 @@ def callback():
         db.session.add(AuditEvent(event="login_succeeded", account_id=account.id,
                                  reason="Training identity and community admission verified"))
         db.session.commit()
-        response = redirect("/")
+        response = redirect(current_app.config.get('BASE_PATH', '') + "/")
         response.set_cookie(current_app.config["SESSION_COOKIE_NAME"], raw,
             max_age=current_app.config["SESSION_SECONDS"], **cookie_options("/api"))
     except ApiError as exc:
         db.session.rollback()
-        response = redirect("/login?error=" + exc.code)
+        response = redirect(current_app.config.get('BASE_PATH', '') + "/login?error=" + exc.code)
     except IntegrityError:
         db.session.rollback()
-        response = redirect("/login?error=LOGIN_RETRY_REQUIRED")
+        response = redirect(current_app.config.get('BASE_PATH', '') + "/login?error=LOGIN_RETRY_REQUIRED")
     response.delete_cookie(current_app.config["LOGIN_COOKIE_NAME"], **cookie_options("/api/auth"))
     return response
 

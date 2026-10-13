@@ -5,6 +5,7 @@ export const store = createStore({
   state: () => ({
     identityState: 'unknown',
     actor: null,
+    user: null,
     admission: null,
     permissions: [],
     csrfToken: null,
@@ -13,11 +14,14 @@ export const store = createStore({
   }),
   getters: {
     authenticated: (state) => state.identityState === 'authenticated',
+    isDarkMode: () => false,
+    role: (state) => state.permissions.includes('governance:manage') ? 'super_admin' : 'user',
     canManage: (state) => state.identityState === 'authenticated' && state.permissions.includes('governance:view'),
   },
   mutations: {
     acceptIdentity(state, data) {
       state.actor = data.actor
+      state.user = { User_Id: Number(data.actor.subject), User_Name: data.actor.display_name }
       state.admission = data.admission
       state.permissions = data.permissions || []
       state.csrfToken = data.csrf_token
@@ -29,6 +33,7 @@ export const store = createStore({
       state.lastError = error.code
       if (error.status === 401 || error.status === 403) {
         state.actor = null
+        state.user = null
         state.admission = null
         state.permissions = []
         state.csrfToken = null
@@ -41,6 +46,7 @@ export const store = createStore({
     },
     clearIdentity(state) {
       state.actor = null
+      state.user = null
       state.admission = null
       state.permissions = []
       state.csrfToken = null
