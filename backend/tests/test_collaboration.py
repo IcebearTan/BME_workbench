@@ -106,3 +106,19 @@ def test_private_item_title_never_leaks_to_same_group_coordinator(app, client):
     assert response.status_code==200
     assert all(row['id']!=item_id for row in response.json['data']['items'])
     assert client.get('/api/work/items/'+str(item_id)).status_code==404
+
+
+def test_merge_scan_includes_person_restrictions_for_another_empty_account(app,client):
+    import base64
+    from workbench.collab.models import PersonWorkspaceRestrictionModel
+    prepare(app,client)
+    app.config.update(IDENTITY_CLIENT_ID='integration',IDENTITY_CLIENT_SECRET='test-integration-key')
+    with app.app_context():
+        db.session.add(PersonWorkspaceRestrictionModel(person_id=3,workspace_id=1,state='vetoed',reason='test'))
+        db.session.commit()
+    header='Basic '+base64.b64encode(b'integration:test-integration-key').decode()
+    response=client.post('/api/integrations/account-usage',headers={'Authorization':header},json={
+        'issuer':app.config['IDENTITY_ISSUER'],'subject':'999','person_id':'3'})
+    assert response.status_code==200 and response.json['has_business_data']
+    assert response.json['counts']['person_restrictions']==1
+    assert client.post('/api/integrations/account-usage',json={'subject':'1'}).status_code==401
