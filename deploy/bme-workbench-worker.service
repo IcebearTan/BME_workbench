@@ -1,0 +1,20 @@
+[Unit]
+Description=BME Workbench Reminders
+After=network.target bme-workbench.service
+
+[Service]
+User=bme-workbench
+Group=bme-workbench
+WorkingDirectory=/opt/BME_workbench/backend
+EnvironmentFile=/etc/bme-workbench.env
+Environment=WORKBENCH_ENV_FILE=/etc/bme-workbench.env
+Environment=TZ=Asia/Shanghai
+ExecStart=/opt/BME_workbench/backend/.venv/bin/python worker.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+StandardOutput=append:/var/log/bme-workbench/worker.log
+StandardError=append:/var/log/bme-workbench/worker-error.log
+
+[Install]
+WantedBy=multi-user.target

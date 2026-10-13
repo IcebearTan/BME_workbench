@@ -1,0 +1,20 @@
+[Unit]
+Description=BME Independent Workbench
+After=network.target mysql.service redis-server.service
+
+[Service]
+User=bme-workbench
+Group=bme-workbench
+WorkingDirectory=/opt/BME_workbench/backend
+EnvironmentFile=/etc/bme-workbench.env
+Environment=WORKBENCH_ENV_FILE=/etc/bme-workbench.env
+Environment=TZ=Asia/Shanghai
+ExecStart=/opt/BME_workbench/backend/.venv/bin/gunicorn --bind 127.0.0.1:5003 --workers 2 --timeout 40 --access-logfile /var/log/bme-workbench/access.log --access-logformat "%%(m)s %%(U)s %%(s)s" wsgi:app
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+StandardOutput=append:/var/log/bme-workbench/http.log
+StandardError=append:/var/log/bme-workbench/http-error.log
+
+[Install]
+WantedBy=multi-user.target
