@@ -73,6 +73,12 @@ directory 的 officers 包含 person_id、org_slot_snapshot、record_source、so
 
 GET /api/appointments/history 接收可选 user_id、year。自身范围按本地 Account.Person 的来源人员标识核对，不按显示姓名匹配；其他人员须有本地 governance:view 或 governance:manage。年份过滤按任期覆盖范围，历史补录和未知日期不构成当前准入。
 
+## 独立内部成员准入
+
+来源新增 POST /workbench-sso/admission：与现有专用客户端相同的 Basic、audience 校验，字段 issuer、subject、person_id、operator_subject、reason。仅登记当前已认证且有效的普通账号，标识必须精确一致，已撤销准入不能由普通导入恢复。返回既有身份响应及目录，消费者复核所有标识，不建立会话、不接收密码。目录包括准入成员，使姓名和认证状态可继续同步。
+
+POST /workbench-sso/candidates 接收 names 数组，返回中央实名匹配结果。工作台浏览器通过自己的管理接口使用，不直接持有服务客户端凭据。中央准入不授予工作区或本地治理权限；归组与分管关系均保存在工作台内。既有社团身份准入继续兼容。
+
 ## 管理权的初次开通
 
 首次登录仅创建普通 Account 映射，不创建治理授权。经有效登录的账号可由受控的本地管理命令明确授予或撤销 governance:view，必须填写原因并留审计。governance:view 控制基础概览，governance:manage 是明确授予的工作台管理员权限。已移植的治理动作校验工作台会话、Origin 与 CSRF。

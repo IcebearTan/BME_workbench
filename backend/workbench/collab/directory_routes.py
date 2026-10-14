@@ -2,7 +2,7 @@ from datetime import date
 from flask import Blueprint, jsonify, request
 from workbench.extensions import db
 from .compat import jwt_required, _current_user
-from .models import ClubGroup, ClubOfficer, ClubMembership, UserModel
+from .models import ClubGroup, ClubOfficer, ClubMembership, UserModel, InternalGroupMember
 from .services.access import require_governance
 
 bp = Blueprint('workbench_directory', __name__, url_prefix='/api')
@@ -64,6 +64,18 @@ def organization():
     for officer in active:
         if officer.group_id in nodes and officer.user_id not in {u['id'] for u in nodes[officer.group_id]['members']}:
             nodes[officer.group_id]['members'].append(person(officer.user_id, officer))
+    from .services.access import internal_member_effective
+    for member in InternalGroupMember.query.filter_by(status='active').all():
+        if member.group_id not in nodes or not internal_member_effective(member):
+            continue
+        members = nodes[member.group_id]['members']
+        existing = next((m for m in members if m['id'] == member.user_id), None)
+        if existing is None:
+            existing = person(member.user_id)
+            members.append(existing)
+        existing['group_role'] = member.role
+        if member.role == 'coordinator':
+            existing['title'] = '分管核心'
     tree = []
     for node in nodes.values():
         parent = nodes.get(node['parent_id'])

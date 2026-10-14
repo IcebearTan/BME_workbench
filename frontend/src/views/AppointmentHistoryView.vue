@@ -19,8 +19,8 @@ const groups = computed(() => {
   if (!year.value && undated.length) result.push({ key: 'unknown', label: '年份不详', records: undated })
   return result
 })
-const sourceLabel = r => ({ system: '系统记录', legacy: '既有记录', backfill: '历史补录' }[r.record_source] || '既有记录')
-const eventLabel = e => e.kind === 'officer_edited' ? (e.detail?.mode === 'correction' ? '信息纠错' : '任职信息修改') : ({ officer_appointed: '登记任命', officer_ended: '登记卸任', officer_backfilled: '补录历史任职' }[e.kind] || '任职变更')
+const sourceLabel = r => ({ system: '系统记录', legacy: '既有记录', backfill: '历史补录', internal: '小组任职' }[r.record_source] || '既有记录')
+const eventLabel = e => e.kind === 'officer_edited' ? (e.detail?.mode === 'correction' ? '信息纠错' : '任职信息修改') : ({ officer_appointed: '登记任命', officer_ended: '登记卸任', officer_backfilled: '补录历史任职', member_registered: '登记小组任职', member_ended: '结束小组任职' }[e.kind] || '任职变更')
 const fieldLabels = { title: '职位', title_id: '职位标识', department: '组别', group_id: '组别标识', term_start: '任期起', term_end: '任期止', scope_note: '任职范围', end_reason: '卸任原因', source_note: '资料来源', historical_year: '已知年份', org_slot_snapshot: '职位类别' }
 const changes = e => Object.entries(e.detail?.changes || {}).filter(([key]) => fieldLabels[key] && !key.endsWith('_id')).map(([key, value]) => `${fieldLabels[key]}：${value.from || '不详'} → ${value.to || '不详'}`).join('；')
 function selectPerson(value) {

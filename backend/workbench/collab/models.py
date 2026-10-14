@@ -78,6 +78,32 @@ class ClubMembership(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     __table_args__ = (db.UniqueConstraint('user_id', 'slot', name='uq_club_membership_user_slot'),)
 
+
+class InternalGroupMember(db.Model):
+    """Workbench-owned membership periods: multiple groups and coordinators."""
+    __tablename__ = 'internal_group_member'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('directory_user.id'), nullable=False, index=True)
+    person_id = db.Column(db.Integer, db.ForeignKey('person.id'), nullable=False, index=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('club_group.id'), nullable=False, index=True)
+    role = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='active')
+    active_key = db.Column(db.String(80), unique=True)
+    started_on = db.Column(db.Date, nullable=False)
+    ended_on = db.Column(db.Date)
+    recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    recorded_by = db.Column(db.Integer, nullable=False)
+    ended_at = db.Column(db.DateTime)
+    ended_by = db.Column(db.Integer)
+    reason = db.Column(db.String(200), nullable=False)
+    end_reason = db.Column(db.String(200))
+    source_note = db.Column(db.String(500))
+    group_name_snapshot = db.Column(db.String(50), nullable=False)
+    __table_args__ = (
+        db.CheckConstraint("role IN ('member','coordinator')", name='internal_member_role'),
+        db.CheckConstraint("status IN ('active','ended')", name='internal_member_status'),
+    )
+
 class ClubOfficer(db.Model):
     """社团干事任职行。卸任 = status 置 ended 不删行（appointed_by/ended_by 操作人留痕）。
     title_id/group_id 为真相源（职位/组别解耦，校验读职位规则字段）；title/department 冗余存名

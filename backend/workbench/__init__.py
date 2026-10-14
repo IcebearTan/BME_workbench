@@ -69,6 +69,10 @@ def create_app(test_config=None, identity_provider=None):
     app.register_blueprint(directory_bp)
     from .collab.history_routes import bp as history_bp
     app.register_blueprint(history_bp)
+    from .collab.organization_routes import bp as organization_bp
+    app.register_blueprint(organization_bp)
+    from .organization_cli import register as register_organization_cli
+    register_organization_cli(app)
     from .integrations import bp as integrations_bp
     app.register_blueprint(integrations_bp)
 

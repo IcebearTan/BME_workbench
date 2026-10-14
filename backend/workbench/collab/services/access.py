@@ -15,10 +15,10 @@ from sqlalchemy import and_, or_
 
 from workbench.extensions import db
 from workbench.collab.models import (ClubMembership, ClubOfficer, WorkAccessGrant, WorkItem,
-                    WorkItemParticipant, WorkWorkspace)
+                    WorkItemParticipant, WorkWorkspace, InternalGroupMember, ClubGroup)
 
 GRANT_ROLES = ('member', 'coordinator', 'governance')
-GRANT_SOURCES = ('officer', 'membership', 'direct')
+GRANT_SOURCES = ('officer', 'membership', 'internal_membership', 'direct')
 
 
 class WorkApiError(Exception):
@@ -79,6 +79,21 @@ def _active_officer(user, today=None):
     return None
 
 
+def internal_member_effective(row):
+    from workbench.models import Account
+    from flask import current_app
+    from workbench.collab.models import UserModel
+    if not row or row.status != 'active' or row.started_on > date.today() or (row.ended_on and row.ended_on < date.today()):
+        return False
+    user = db.session.get(UserModel, row.user_id)
+    account = Account.query.filter_by(issuer=current_app.config['IDENTITY_ISSUER'], subject=str(row.user_id)).first()
+    group = db.session.get(ClubGroup, row.group_id)
+    return bool(user and user.status == 'active' and user.lifecycle == 'active' and user.verification_status == 'verified'
+        and account and account.person_id == row.person_id and str(user.person_id) == account.person.external_id
+        and not account.disabled and not account.person.blocked
+        and group and group.status == 'active')
+
+
 def eligibility(user):
     """两类资格（§5.1）：有效在任干事；或当前有有效组归属且已被明确开通
     （至少一条有效协作授权）的组内工作人员。资格只表示身份事实，
@@ -87,6 +102,7 @@ def eligibility(user):
     if officer:
         return {'kind': 'officer', 'officer_id': officer.id, 'group_id': officer.group_id}
     mships = ClubMembership.query.filter_by(user_id=user.id).all()
+    mships += [m for m in InternalGroupMember.query.filter_by(user_id=user.id, status='active').all() if internal_member_effective(m)]
     if mships and grants_for(user):
         return {'kind': 'member', 'group_ids': [m.group_id for m in mships]}
     return None
@@ -97,7 +113,7 @@ def participation_eligible(user):
     在任干事，或（有效组归属 ∧ 至少一条有效授权）。"""
     if _active_officer(user):
         return True
-    if not ClubMembership.query.filter_by(user_id=user.id).first():
+    if not ClubMembership.query.filter_by(user_id=user.id).first() and not any(internal_member_effective(m) for m in InternalGroupMember.query.filter_by(user_id=user.id, status='active').all()):
         return False
     return bool(grants_for(user))
 
@@ -119,6 +135,7 @@ def participation_eligible_bulk(users):
             officer_uids.add(o.user_id)
     member_uids = {m.user_id for m in ClubMembership.query.filter(
         ClubMembership.user_id.in_(uids)).all()}
+    member_uids.update(m.user_id for m in InternalGroupMember.query.filter(InternalGroupMember.user_id.in_(uids), InternalGroupMember.status == 'active').all() if internal_member_effective(m))
     grant_uids = set()
     for g in WorkAccessGrant.query.filter(
             WorkAccessGrant.user_id.in_(uids),
@@ -165,6 +182,10 @@ def grants_effective_bulk(grants):
             row = mships.get(g.source_id)
             out[g.id] = bool(row and row.user_id == g.user_id
                              and row.group_id == g.group_id_snapshot)
+        elif g.source_type == 'internal_membership':
+            row = db.session.get(InternalGroupMember, g.source_id)
+            out[g.id] = bool(internal_member_effective(row) and row.user_id == g.user_id
+                and row.group_id == g.group_id_snapshot and (g.role != 'coordinator' or row.role == 'coordinator'))
         elif g.source_type == 'direct':
             out[g.id] = g.role == 'governance'
         else:
@@ -208,6 +229,13 @@ def grant_status_reason(g):
             return False, '归属来源行不存在'
         if row.group_id != g.group_id_snapshot:
             return False, '组归属已调整（授权绑定原组）'
+        return True, ''
+    if g.source_type == 'internal_membership':
+        row = db.session.get(InternalGroupMember, g.source_id) if g.source_id else None
+        if not internal_member_effective(row) or row.user_id != g.user_id or row.group_id != g.group_id_snapshot:
+            return False, '内部小组任职已结束或人员身份已变化'
+        if g.role == 'coordinator' and row.role != 'coordinator':
+            return False, '分管角色已变更'
         return True, ''
     if g.source_type == 'direct':
         if g.role != 'governance':

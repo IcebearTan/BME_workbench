@@ -39,6 +39,12 @@ class DisabledProvider:
     def inspect(self, **kwargs):
         raise unavailable()
 
+    def admit(self, **kwargs):
+        raise unavailable()
+
+    def candidates(self, **kwargs):
+        raise unavailable()
+
 
 class HttpIdentityProvider:
     configured = True
@@ -74,6 +80,10 @@ class HttpIdentityProvider:
             if (endpoint == "IDENTITY_EXCHANGE_URL" and response.status_code == 400
                     and response.json() == {"error": "INVALID_CODE"}):
                 raise ApiError("ADMISSION_DENIED", "登录票据无效，请重新登录", 403)
+            if endpoint == 'IDENTITY_ADMISSION_URL' and response.status_code in (403, 409):
+                body = response.json()
+                if isinstance(body, dict) and body.get('error') in ('VERIFIED_MEMBER_REQUIRED', 'PERSON_CHANGED', 'ADMISSION_REVOKED'):
+                    raise ApiError(body['error'], '来源拒绝准入：请核对认证、人员身份或撤销状态', response.status_code)
             if response.status_code != 200 or len(response.content) > 1024 * 1024:
                 raise unavailable()
             data = response.json()
@@ -105,3 +115,28 @@ class HttpIdentityProvider:
     def inspect(self, *, issuer, subject):
         return self._call("IDENTITY_STATUS_URL", {"issuer": issuer, "subject": subject,
             "audience": self.config["IDENTITY_CLIENT_ID"]})
+
+    def admit(self, *, subject, person_id, operator_subject, reason):
+        endpoint = self.config['IDENTITY_STATUS_URL'].rsplit('/', 1)[0] + '/admission'
+        self.config['IDENTITY_ADMISSION_URL'] = endpoint
+        identity = self._call('IDENTITY_ADMISSION_URL', {'issuer': self.config['IDENTITY_ISSUER'],
+            'subject': subject, 'person_id': person_id, 'operator_subject': operator_subject,
+            'reason': reason, 'audience': self.config['IDENTITY_CLIENT_ID']})
+        if identity.subject != subject or identity.person_id != person_id or not identity.admitted:
+            raise ApiError('VERIFIED_MEMBER_REQUIRED', '人员身份与准入登记不一致', 403)
+        return identity
+
+    def candidates(self, *, names):
+        try:
+            response = requests.post(self.config['IDENTITY_STATUS_URL'].rsplit('/', 1)[0] + '/candidates',
+                json={'names': names, 'audience': self.config['IDENTITY_CLIENT_ID']},
+                auth=(self.config['IDENTITY_CLIENT_ID'], self.config['IDENTITY_CLIENT_SECRET']),
+                timeout=(3, 5), allow_redirects=False)
+            if response.status_code != 200 or len(response.content) > 1024 * 1024:
+                raise unavailable()
+            matches = response.json().get('matches')
+            if not isinstance(matches, list) or len(matches) != len(names):
+                raise unavailable()
+            return matches
+        except (requests.RequestException, ValueError, TypeError):
+            raise unavailable() from None

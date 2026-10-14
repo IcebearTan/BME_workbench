@@ -3,7 +3,7 @@ from flask import Blueprint, current_app, request, jsonify
 from sqlalchemy import or_
 from .extensions import db
 from .models import Account, PermissionGrant, Person
-from .collab.models import WorkItem, WorkAccessGrant, WorkItemParticipant, WorkFile, WorkReply, WorkEvent, WorkSubmission, PersonWorkspaceRestrictionModel, UserModel
+from .collab.models import WorkItem, WorkAccessGrant, WorkItemParticipant, WorkFile, WorkReply, WorkEvent, WorkSubmission, PersonWorkspaceRestrictionModel, UserModel, InternalGroupMember
 
 bp=Blueprint('workbench_integrations',__name__,url_prefix='/api/integrations')
 
@@ -49,7 +49,8 @@ def account_usage():
     counts={name:model.query.filter(getattr(model,column).in_(uids)).count() for name,model,column in [
         ('items',WorkItem,'created_by'),('grants',WorkAccessGrant,'user_id'),
         ('participants',WorkItemParticipant,'user_id'),('files',WorkFile,'created_by'),
-        ('replies',WorkReply,'author_id'),('events',WorkEvent,'actor_user_id'),('submissions',WorkSubmission,'submitted_by')]}
+        ('replies',WorkReply,'author_id'),('events',WorkEvent,'actor_user_id'),('submissions',WorkSubmission,'submitted_by'),
+        ('internal_memberships',InternalGroupMember,'user_id')]}
     counts['governance']=PermissionGrant.query.filter_by(account_id=account.id).count() if account else 0
     if person_id:
         counts['person_restrictions']=PersonWorkspaceRestrictionModel.query.filter_by(person_id=int(person_id)).count()

@@ -15,6 +15,7 @@ export const router = createRouter({
       { path: 'board', component: () => import('../components/Work/WorkBoard.vue') },
       { path: 'members', component: () => import('../views/WorkMembersView.vue') },
       { path: 'appointments', component: () => import('../views/AppointmentHistoryView.vue') },
+      { path: 'organization', component: () => import('../views/OrganizationManageView.vue'), meta: { permission: 'governance:manage' } },
       { path: 'summary', component: () => import('../components/Work/WorkSummaryBoard.vue') },
       { path: 'files', component: () => import('../components/Work/WorkFilesIndex.vue') },
       { path: 'records', component: () => import('../components/Work/WorkRecordsIndex.vue') },

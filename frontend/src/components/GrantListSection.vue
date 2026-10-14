@@ -194,7 +194,7 @@ defineProps({
 const emit = defineEmits(['changed'])
 
 const ROLE_LABELS = { member: '组员', coordinator: '协调员', governance: '治理' }
-const SOURCE_LABELS = { officer: '在任任职', membership: '组归属', direct: '直接授予' }
+const SOURCE_LABELS = { officer: '在任任职', membership: '组归属', internal_membership: '小组任职', direct: '直接授予' }
 
 // ── 开通授权表单 ──
 const form = reactive({

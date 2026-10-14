@@ -53,6 +53,7 @@ const navItems = computed(() => {
     { to: '/work/members', label: '成员', icon: User },
     { to: '/work/appointments', label: '任职履历', icon: Clock },
   ]
+  if (store.state.permissions.includes('governance:manage')) items.push({ to: '/work/organization', label: '小组任职管理', icon: User })
   if (hasSubtree.value) items.push({ to: '/work/summary', label: '子组汇总', icon: OfficeBuilding })
   items.push(
     { to: '/work/files', label: '工作资料', icon: Folder },

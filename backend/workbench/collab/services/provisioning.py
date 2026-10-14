@@ -72,6 +72,14 @@ def _desired(user_id, ws):
     默认建议）——任意组的在任任职即资格，组长类挂 coordinator、普通干事挂 member；
     普通组员不进社团区（无 membership 来源）。"""
     today = date.today()
+    from workbench.collab.models import InternalGroupMember
+    from .access import internal_member_effective
+    local = [r for r in InternalGroupMember.query.filter_by(user_id=user_id, status='active').all() if internal_member_effective(r)]
+    if ws.scope == 'group':
+        local = [r for r in local if r.group_id == ws.club_group_id]
+        if local:
+            row = next((r for r in local if r.role == 'coordinator'), local[0])
+            return (row.role, 'internal_membership', row.id)
     if ws.scope == 'club':
         for o in ClubOfficer.query.filter_by(user_id=user_id).all():
             if not _officer_in_term(o, today):
@@ -167,7 +175,7 @@ def sync_user_workspace(user_id, workspace_id, operator_id=None, event='同步')
     grant = WorkAccessGrant(
         user_id=user_id, role=role, workspace_id=workspace_id,
         source_type=source_type, source_id=source_id,
-        group_id_snapshot=ws.club_group_id if source_type == 'membership' else None,
+        group_id_snapshot=ws.club_group_id if source_type in ('membership', 'internal_membership') else None,
         status='active', origin='auto',
         granted_by=operator_id if operator_id is not None else 1,   # 无操作人落款超管(id=1)，避免 NOT NULL 违约
         grant_reason=f'{AUTO_REASON}：{event}（{group_name}）',

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from workbench.extensions import db
 from workbench.collab.models import (UserModel, ClubGroup, ClubMembership, ClubOfficer,
                     WorkAccessGrant, WorkItem, WorkResponseRequest, WorkTask,
-                    WorkTransferRequest, WorkWorkspace)
+                    WorkTransferRequest, WorkWorkspace, InternalGroupMember)
 from workbench.collab.services import access
 from workbench.collab.services.access import WorkApiError
 
@@ -189,6 +189,14 @@ def validate_grant_payload(actor, data):
             # 如社长）不挂组，放行任意组工作区
             if off.group_id is not None and off.group_id != ws.club_group_id:
                 raise WorkApiError(400, "任职来源挂靠组与工作区组不一致")
+        elif source_type == 'internal_membership':
+            source_id = access.int_or_400(data.get('source_id'), 'source_id')
+            m = db.session.get(InternalGroupMember, source_id)
+            if not access.internal_member_effective(m) or m.user_id != uid or m.group_id != ws.club_group_id:
+                raise WorkApiError(400, '内部任职来源与账号或小组不一致')
+            if role == 'coordinator' and m.role != 'coordinator':
+                raise WorkApiError(403, '成员记录不能作为分管授权来源')
+            group_snapshot = m.group_id
         elif source_type == 'membership':
             source_id = access.int_or_400(data.get("source_id"), "source_id")
             m = ClubMembership.query.get(source_id)
