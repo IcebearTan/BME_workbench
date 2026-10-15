@@ -11,7 +11,7 @@ import { ElMessage } from 'element-plus'
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 import '@bme/editor/md-setup'
-import { DewCard, DewTag, DewSkeleton, DewDialog, DewInput, DewButton } from '@bme/dew-ui'
+import { DewCard, DewTag, DewSkeleton, DewButton } from '@bme/dew-ui'
 import { ArrowLeft, Lock } from '@element-plus/icons-vue'
 import WorkReplyComposer from '../components/Work/WorkReplyComposer.vue'
 import WorkEventTrail from '../components/Work/WorkEventTrail.vue'
@@ -20,6 +20,8 @@ import WorkTaskPanel from '../components/Work/WorkTaskPanel.vue'
 import WorkFileList from '../components/Work/WorkFileList.vue'
 import WorkBusinessCard from '../components/Work/WorkBusinessCard.vue'
 import WorkCommandBar from '../components/Work/WorkCommandBar.vue'
+import WorkItemSettingsDialog from '../components/Work/WorkItemSettingsDialog.vue'
+import WorkCollaborationPanel from '../components/Work/WorkCollaborationPanel.vue'
 import { useWorkAccess } from '../composables/useWorkAccess'
 import { workService, ITEM_STATUS_LABELS, ITEM_STATUS_TYPE, VISIBILITY_LABELS } from '../services/workService'
 
@@ -31,7 +33,7 @@ const isDarkMode = computed(() => store.getters.isDarkMode)
 
 const itemId = computed(() => Number(route.params.id))
 const { me: workMe } = useWorkAccess()
-const workTargets = computed(() => workMe.value?.available_targets || [])
+const workTargets = computed(() => (workMe.value?.available_targets || []).filter(w => w.ws_id !== detail.value?.workspace_id))
 
 // ── 数据态（三段式） ──
 const detail = ref(null)
@@ -41,17 +43,20 @@ const loadingMore = ref(false)
 const loading = ref(true)
 const loadFailed = ref(false)
 const notAccessible = ref(false)
+let loadGeneration = 0
 
 const inviteVisible = ref(false)
 const replyTo = ref(null)
 const pendingRequest = ref(null)
 
-// 编辑对话框
-const editVisible = ref(false)
-const editForm = ref({ title: '', body: '', visibility: 'workspace' })
-const editSaving = ref(false)
+const settingsVisible = ref(false)
+const commandBar = ref(null)
+const collaborationPanel = ref(null)
 
 const allowed = computed(() => detail.value?.allowed_actions || [])
+const draftNeedsSettings = computed(() => detail.value?.kind === 'task' && detail.value.status === 'draft'
+  && (!detail.value.task?.assignee_user_id || !detail.value.task?.due_at))
+const hiddenCommands = computed(() => ['handoff', ...(draftNeedsSettings.value ? ['publish'] : [])])
 const canReply = computed(() =>
   detail.value && detail.value.status !== 'closed' && detail.value.status !== 'draft')
 const responders = computed(() => {
@@ -64,12 +69,18 @@ const responders = computed(() => {
 })
 
 async function loadDetail() {
-  const res = await workService.fetchItem(itemId.value)
+  const id = itemId.value
+  const generation = loadGeneration
+  const res = await workService.fetchItem(id)
+  if (itemId.value !== id || generation !== loadGeneration) return
   detail.value = res.data
 }
 
 async function loadReplies(afterSeq = 0) {
-  const res = await workService.fetchReplies(itemId.value, { after_seq: afterSeq, limit: 50 })
+  const id = itemId.value
+  const generation = loadGeneration
+  const res = await workService.fetchReplies(id, { after_seq: afterSeq, limit: 50 })
+  if (itemId.value !== id || generation !== loadGeneration) return {}
   const data = res.data || {}
   if (afterSeq === 0) {
     replies.value = data.replies || []
@@ -96,27 +107,32 @@ async function loadMoreReplies() {
 }
 
 async function loadPendingRequest() {
+  const id = itemId.value
+  const generation = loadGeneration
   try {
     const res = await workService.fetchTodos()
+    if (itemId.value !== id || generation !== loadGeneration) return
     pendingRequest.value = (res.data?.pending_responses || [])
-      .find(r => r.item_id === itemId.value) || null
-  } catch { pendingRequest.value = null }
+      .find(r => r.item_id === id) || null
+  } catch { if (itemId.value === id && generation === loadGeneration) pendingRequest.value = null }
 }
 
-async function advanceRead(seq) {
+async function advanceRead(seq, id = itemId.value) {
   if (!seq) return
   try {
-    await workService.advanceRead(itemId.value, seq)
+    await workService.advanceRead(id, seq)
   } catch { /* 游标推进失败不影响阅读 */ }
 }
 
 async function loadAll() {
+  const generation = ++loadGeneration
   loading.value = true
   loadFailed.value = false
   notAccessible.value = false
   // allSettled 不 reject：逐个检查结果，404=不可访问、其他失败=loadFailed（可重试），
   // 不再把网络错误/500 误报成「撤权」
   const results = await Promise.allSettled([loadDetail(), loadReplies(0), loadPendingRequest()])
+  if (generation !== loadGeneration) return
   const rejected = results.find(r => r.status === 'rejected')
   if (rejected) {
     if (rejected.reason?.response?.status === 404) {
@@ -141,6 +157,8 @@ watch(itemId, (id, oldId) => {
   repliesHasMore.value = false
   pendingRequest.value = null
   replyTo.value = null
+  settingsVisible.value = false
+  inviteVisible.value = false
   loadAll()
 })
 
@@ -150,10 +168,13 @@ function startPolling() {
   if (pollTimer) return
   pollTimer = setInterval(async () => {
     if (document.visibilityState !== 'visible' || !detail.value) return
+    const id = itemId.value
+    const generation = loadGeneration
     try {
       const data = await loadReplies(replies.value.length ? replies.value[replies.value.length - 1].seq : 0)
+      if (id !== itemId.value || generation !== loadGeneration || !detail.value) return
       if (data.last_reply_seq > (detail.value.last_read_seq || 0)) {
-        advanceRead(data.last_reply_seq)
+        advanceRead(data.last_reply_seq, id)
         detail.value.last_read_seq = data.last_reply_seq
       }
     } catch { /* 轮询失败静默，下轮重试 */ }
@@ -166,39 +187,24 @@ function stopPolling() {
 // ── 动作 ──
 // 命令类操作由 WorkCommandBar 统一执行，完成后 refreshAll（重新拉详情+回复）
 async function refreshAll() {
-  await Promise.allSettled([loadDetail(), loadReplies(0)])
-}
-
-function openEdit() {
-  editForm.value = {
-    title: detail.value.title,
-    body: detail.value.body || '',
-    visibility: detail.value.visibility,
+  const id = itemId.value
+  const generation = loadGeneration
+  const results = await Promise.allSettled([loadDetail(), loadReplies(0), collaborationPanel.value?.refresh()])
+  if (id !== itemId.value || generation !== loadGeneration) return
+  if (results.some(result => result.status === 'rejected' && result.reason?.response?.status === 404)) {
+    detail.value = null
+    replies.value = []
+    notAccessible.value = true
+    settingsVisible.value = false
+    inviteVisible.value = false
+    return
   }
-  editVisible.value = true
-}
-
-async function submitEdit() {
-  if (editSaving.value) return
-  editSaving.value = true
-  try {
-    await workService.patchItem(itemId.value, {
-      title: editForm.value.title.trim(),
-      body: editForm.value.body || null,
-      visibility: editForm.value.visibility,
-      expected_version: detail.value.version,
-    })
-    ElMessage.success('已更新')
-    editVisible.value = false
-    await loadDetail()
-  } catch (e) {
-    ElMessage.error(e.response?.data?.message || '更新失败（若提示版本冲突请刷新后重试）')
-  } finally {
-    editSaving.value = false
-  }
+  if (results.some(result => result.status === 'rejected')) ElMessage.warning('部分内容刷新失败，请重新打开查看最新状态')
 }
 
 function onReplySent(reply) {
+  const id = itemId.value
+  const generation = loadGeneration
   // 占位行仅携带定位信息；真实正文由 loadReplies 回包按 id merge 替换（见 loadReplies）
   replies.value.push({
     id: reply.id, seq: reply.seq,
@@ -211,7 +217,7 @@ function onReplySent(reply) {
   replyTo.value = null
   pendingRequest.value = null
   loadReplies(replies.value[replies.value.length - 1].seq - 1).then(() => {
-    if (detail.value) {
+    if (detail.value && id === itemId.value && generation === loadGeneration) {
       detail.value.last_reply_seq = Math.max(detail.value.last_reply_seq, reply.seq)
       advanceRead(reply.seq)
     }
@@ -288,14 +294,15 @@ onUnmounted(stopPolling)
         </div>
         <!-- 动作区（allowed_actions 驱动；后端每次仍重新授权 §13） -->
         <div v-if="allowed.length" class="action-line">
-          <DewButton v-if="allowed.includes('edit')" size="sm" @click="openEdit">编辑</DewButton>
-          <DewButton v-if="allowed.includes('invite')" size="sm" @click="inviteVisible = true">
-            邀请参与者
-          </DewButton>
+          <DewButton v-if="allowed.includes('edit')" size="sm" @click="settingsVisible = true">事项设置</DewButton>
         </div>
-        <WorkCommandBar :item-id="itemId" :kind="detail.kind" :version="detail.version"
+        <div v-if="detail.status === 'draft'" class="draft-guidance">
+          <span>{{ draftNeedsSettings ? '已保存为仅你可见的草稿。在事项设置中补齐负责人和截止时间，即可发布。' : '当前仅你可见。发布后可开始讨论，并邀请其他组成员。' }}</span>
+          <DewButton v-if="draftNeedsSettings && allowed.includes('edit')" size="sm" active @click="settingsVisible = true">完善任务设置</DewButton>
+        </div>
+        <WorkCommandBar ref="commandBar" :key="itemId" :item-id="itemId" :kind="detail.kind" :version="detail.version"
                         :allowed="allowed" :files="detail.files || []"
-                        :targets="workTargets" @done="refreshAll" />
+                        :targets="workTargets" :hidden-actions="hiddenCommands" @done="refreshAll" />
         <div v-if="detail.status === 'closed' && detail.closed_reason" class="closed-reason">
           关闭说明：{{ detail.closed_reason }}
         </div>
@@ -308,6 +315,10 @@ onUnmounted(stopPolling)
 
       <!-- 任务属性与提交历史 -->
       <WorkTaskPanel :detail="detail" />
+
+      <WorkCollaborationPanel ref="collaborationPanel" :key="itemId" :item="detail"
+                              @invite="inviteVisible = true" @handoff="commandBar?.openCommand('handoff')"
+                              @promote="commandBar?.openCommand('promote')" @changed="refreshAll" />
 
       <!-- 正文（flat：阅读场景纯色容器） -->
       <DewCard v-if="detail.body" size="md" variant="flat" class="body-card">
@@ -349,7 +360,7 @@ onUnmounted(stopPolling)
           </DewButton>
         </div>
 
-        <WorkReplyComposer v-if="canReply" :item-id="itemId" :responders="responders"
+        <WorkReplyComposer v-if="canReply" :key="itemId" :item-id="itemId" :responders="responders"
                            :reply-to="replyTo" :pending-request="pendingRequest"
                            @sent="onReplySent" @cancel-quote="replyTo = null" />
         <p v-else-if="detail.status === 'closed'" class="reply-closed-hint">
@@ -361,37 +372,19 @@ onUnmounted(stopPolling)
       </DewCard>
 
       <!-- 操作记录（与讨论区分呈现，§6.2） -->
-      <WorkEventTrail :item-id="itemId" />
+      <WorkEventTrail :key="itemId" :item-id="itemId" />
     </template>
 
-    <WorkParticipantDialog v-model="inviteVisible" :item-id="itemId"
-                           :existing="(detail?.participants || []).map(p => p.user_id)"
-                           @invited="loadDetail" />
-
-    <DewDialog v-model="editVisible" title="编辑事项" :width="520">
-      <el-form label-width="84px">
-        <el-form-item label="标题" required>
-          <DewInput v-model="editForm.title" maxlength="200" />
-        </el-form-item>
-        <el-form-item label="可见范围">
-          <el-radio-group v-model="editForm.visibility">
-            <el-radio v-for="(label, key) in VISIBILITY_LABELS" :key="key" :value="key">{{ label }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="正文">
-          <el-input v-model="editForm.body" type="textarea" :rows="6" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <DewButton @click="editVisible = false">取消</DewButton>
-        <DewButton active :loading="editSaving" @click="submitEdit">保存</DewButton>
-      </template>
-    </DewDialog>
+    <WorkParticipantDialog :key="itemId" v-model="inviteVisible" :item-id="itemId"
+                           :existing="[detail?.created_by, ...(detail?.participants || []).map(p => p.user_id)]"
+                           @invited="refreshAll" />
+    <WorkItemSettingsDialog v-if="detail" :key="itemId" v-model="settingsVisible" :item="detail" @saved="refreshAll" />
   </div>
 </template>
 
 <style scoped>
 .work-item-view { max-width: 860px; }
+.draft-guidance { margin-top: 12px; padding: 12px; background: var(--el-fill-color-light); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; line-height: 1.7; }
 
 .sk-block { margin-bottom: 14px; }
 

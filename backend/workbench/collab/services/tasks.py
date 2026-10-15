@@ -20,7 +20,8 @@ from workbench.collab.services import access, reminders
 from workbench.collab.services.access import WorkApiError
 from workbench.collab.services.events import record_event, fan_out
 from workbench.collab.services.items import (bump_version, ensure_version, _ensure_assignee_participant,
-                                 _notify_item_audience, _parse_task_params, parse_due_at)
+                                 _notify_item_audience, _parse_task_params, parse_due_at,
+                                 _require_task_person)
 
 TERMINAL_STATUSES = ('done', 'cancelled')
 ACTIVE_TASK_STATUSES = ('todo', 'in_progress', 'blocked', 'review')
@@ -68,14 +69,16 @@ def promote(user, item_id, payload):
     task_payload = dict(payload)
     if task_payload.get('assignee_id') is not None:
         task_payload['assignee_user_id'] = task_payload['assignee_id']
+    if task_payload.get('reviewer_id') is not None:
+        task_payload['reviewer_user_id'] = task_payload['reviewer_id']
     params = _parse_task_params({'task': task_payload})
     if not params.get('assignee_user_id'):
         raise WorkApiError(400, '转任务须指定负责人')
     if not params.get('due_at'):
         raise WorkApiError(400, '转任务须指定截止时间')
-    assignee = UserModel.query.get(params['assignee_user_id'])
-    if not assignee or not access.participation_eligible(assignee):
-        raise WorkApiError(400, '负责人不具备协作资格')
+    assignee = _require_task_person(item, params['assignee_user_id'], '负责人')
+    reviewer = (_require_task_person(item, params['reviewer_user_id'], '验收人')
+                if params.get('reviewer_user_id') else None)
 
     task = WorkTask(item_id=item.id, **{
         **params,
@@ -86,6 +89,8 @@ def promote(user, item_id, payload):
     item.status = 'todo'
     item.promoted_at = datetime.now()
     _ensure_assignee_participant(item, assignee.id, user)
+    if reviewer:
+        _ensure_assignee_participant(item, reviewer.id, user, reason='reviewer')
     bump_version(item, payload.get('expected_version'), user.id, 'promoted',
                  diff={'assignee': assignee.id,
                        'due_at': params['due_at'].strftime('%Y-%m-%d %H:%M')})
@@ -393,10 +398,12 @@ def _cmd_publish(user, item, task, access_, payload):
         raise WorkApiError(409, '该任务已发布')
     if not task.assignee_user_id or not task.due_at:
         raise WorkApiError(409, '任务发布前须补齐负责人与截止时间')
-    assignee = UserModel.query.get(task.assignee_user_id)
-    if not assignee or not access.participation_eligible(assignee):
-        raise WorkApiError(409, '负责人不具备协作资格')
+    assignee = _require_task_person(item, task.assignee_user_id, '负责人', error_code=409)
+    reviewer = (_require_task_person(item, task.reviewer_user_id, '验收人', error_code=409)
+                if task.reviewer_user_id else None)
     _ensure_assignee_participant(item, assignee.id, user)
+    if reviewer:
+        _ensure_assignee_participant(item, reviewer.id, user, reason='reviewer')
     task.published_at = datetime.now()
     item.status = 'todo'
     bump_version(item, payload.get('expected_version'), user.id, 'published')
@@ -429,6 +436,8 @@ _COMMAND_HANDLERS = {
 # ── 动作集（详情 allowed_actions 的任务段）───────────────────
 
 def task_allowed_actions(user, item, task, item_access):
+    if item.status == 'draft':
+        return ['edit', 'publish'] if item.created_by == user.id else []
     actions = {'reply'}
     if item.created_by == user.id or item_access.is_coordinator:
         actions.add('edit')

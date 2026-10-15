@@ -75,23 +75,33 @@ def list_candidates(user):
     if grants:
         effective = access.grants_effective_bulk(grants)
         uids.update(g.user_id for g in grants if effective.get(g.id))
-    for o in ClubOfficer.query.filter_by(status='active').all():
-        if o.term_start <= today and (o.term_end is None or today <= o.term_end):
-            uids.add(o.user_id)
+    officers = [o for o in ClubOfficer.query.filter_by(status='active').all()
+                if o.term_start and o.term_start <= today and (o.term_end is None or today <= o.term_end)]
+    uids.update(o.user_id for o in officers)
     rows = []
     if uids:
         names = {u.id: u.username for u in
                  UserModel.query.filter(UserModel.id.in_(list(uids))).all()}
-        # 身份标注（X1）：主要组 + 在任职位——邀请/转交/点名/交付的候选下拉可用性前提
-        from workbench.collab.models import ClubGroup, ClubMembership
-        groups = {g.id: g.name for g in ClubGroup.query.all()}
-        primary = {m.user_id: groups.get(m.group_id)
-                   for m in ClubMembership.query.filter_by(slot='primary').all()}
+        # 多组身份标注供邀请筛选使用；不会由目录信息派生事项或工作区权限。
+        groups = {g.id: g.name for g in ClubGroup.query.filter_by(status='active').all()}
+        memberships = ClubMembership.query.filter(ClubMembership.user_id.in_(uids)).all()
+        primary = {m.user_id: groups.get(m.group_id) for m in memberships if m.slot == 'primary'}
+        user_groups = {uid: set() for uid in uids}
+        for membership in memberships:
+            if membership.group_id in groups:
+                user_groups[membership.user_id].add(membership.group_id)
+        for membership in InternalGroupMember.query.filter(
+                InternalGroupMember.user_id.in_(uids), InternalGroupMember.status == 'active').all():
+            if access.internal_member_effective(membership):
+                user_groups[membership.user_id].add(membership.group_id)
         titles = {}
-        for o in ClubOfficer.query.filter_by(status='active').all():
+        for o in officers:
             titles.setdefault(o.user_id, o.title)
+            if o.group_id in groups:
+                user_groups[o.user_id].add(o.group_id)
         rows = [{'user_id': uid, 'username': names.get(uid),
-                 'group_name': primary.get(uid), 'title': titles.get(uid)}
+                 'group_name': primary.get(uid), 'title': titles.get(uid),
+                 'groups': [{'id': gid, 'name': groups[gid]} for gid in sorted(user_groups[uid])]}
                 for uid in sorted(uids)]
     return rows
 

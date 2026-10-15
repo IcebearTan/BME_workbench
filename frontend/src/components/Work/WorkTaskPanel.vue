@@ -17,8 +17,8 @@ const DECISION_LABELS = { accepted: '已通过', returned: '已退回' }
 const infoRows = computed(() => {
   if (!task.value) return []
   const rows = [
-    { label: '负责人', value: task.value.assignee_name || `#${task.value.assignee_user_id || '待分派'}` },
-    { label: '截止时间', value: task.value.due_at, danger: task.value.overdue,
+    { label: '负责人', value: task.value.assignee_name || (task.value.assignee_user_id ? `#${task.value.assignee_user_id}` : '待分派') },
+    { label: '截止时间', value: task.value.due_at || '待设置', danger: task.value.overdue,
       suffix: task.value.overdue ? '（已逾期）' : '' },
   ]
   if (task.value.start_at) rows.splice(1, 0, { label: '开始时间', value: task.value.start_at })

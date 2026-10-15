@@ -329,16 +329,17 @@ def download(user, file_id, link_id):
     if link and link.target_type == 'handoff':
         from workbench.collab.models import WorkHandoff
         handoff = WorkHandoff.query.get(link.target_id)
-        if not handoff or handoff.status not in ('accepted', 'done'):
+        if not handoff or handoff.status not in ('accepted', 'done') \
+                or link.file_id != file_id or link.purpose != 'handoff_payload':
             raise WorkApiError(404, '文件不存在')
         if handoff.to_workspace_id not in access.workspace_access(user):
             raise WorkApiError(404, '文件不存在')
-        wf = WorkFile.query.filter_by(id=link.file_id).first()
+        wf = WorkFile.query.filter_by(id=file_id, item_id=handoff.item_id, status='active').first()
         if not wf:
             raise WorkApiError(404, '文件不存在')
-        version = (WorkFileVersion.query.get(link.version_id)
-                   if link.version_id else None) or \
-            WorkFileVersion.query.get(wf.current_version_id)
+        # 交付始终引用明确版本，不在关联损坏时回退到最新文件。
+        version = WorkFileVersion.query.filter_by(id=link.version_id, file_id=wf.id).first() \
+            if link.version_id else None
         if not version or version.format_check != 'passed':
             raise WorkApiError(404, '文件不存在')
         return wf, version

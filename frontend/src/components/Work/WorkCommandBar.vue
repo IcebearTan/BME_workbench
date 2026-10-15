@@ -15,6 +15,7 @@ const props = defineProps({
   allowed: { type: Array, default: () => [] },
   files: { type: Array, default: () => [] },     // 事项附件（提交时绑定固定版本）
   targets: { type: Array, default: () => [] },   // 跨组交付目标组（/work/me available_targets）
+  hiddenActions: { type: Array, default: () => [] },
 })
 const emit = defineEmits(['done'])
 
@@ -22,7 +23,7 @@ const emit = defineEmits(['done'])
 const VISIBLE = ['publish', 'promote', 'start', 'block', 'unblock', 'submit', 'complete',
                  'review_accept', 'review_return', 'close', 'reopen', 'reschedule',
                  'reassign', 'cancel', 'transfer', 'handoff']
-const shown = computed(() => props.allowed.filter(a => VISIBLE.includes(a)))
+const shown = computed(() => props.allowed.filter(a => VISIBLE.includes(a) && !props.hiddenActions.includes(a)))
 
 // 命令定义表：label/tone（primary 推进 | default 调整 | danger 终止）/确认文案/参数字段
 // （与后端命令白名单同源，§13）。reopen 按 kind 拆reopen_topic / reopen_task 两键，
@@ -44,7 +45,7 @@ const COMMAND_DEFS = {
     { key: 'due_at', label: '截止时间', type: 'date', required: true },
     { key: 'priority', label: '优先级', type: 'static', options: PRIORITY_OPTIONS, default: 'normal' },
     { key: 'accept_criteria', label: '验收标准', type: 'textarea' },
-    { key: 'reviewer_id', label: '验收人', type: 'candidates' },
+    { key: 'reviewer_user_id', label: '验收人', type: 'candidates' },
   ] },
   start: { label: '开始任务', tone: 'primary' },
   block: { label: '标记受阻', tone: 'default', title: '标记受阻（记录原因与跟进时间）', fields: [
@@ -77,10 +78,10 @@ const COMMAND_DEFS = {
   cancel: { label: '取消任务', tone: 'danger', title: '取消任务', fields: [
     { key: 'reason', label: '取消原因', type: 'text', required: true },
   ] },
-  handoff: { label: '交付给其他组', tone: 'default',
-             title: '跨组交付（目标组接单后在本组生成关联任务）', handoff: true, fields: [
+  handoff: { label: '请其他组承接', tone: 'default',
+             title: '请其他组承接', handoff: true, fields: [
     { key: 'to_workspace_id', label: '目标组', type: 'targets', required: true },
-    { key: 'kind', label: '用途', type: 'text', required: true, placeholder: '如：上架 / 审核 / 支援' },
+    { key: 'kind', label: '用途', type: 'text', required: true, default: '协作支援', placeholder: '如：宣传制作 / 技术支持 / 活动执行' },
     { key: 'note', label: '交付说明', type: 'textarea', required: true },
     { key: 'deadline', label: '期望完成', type: 'datetime' },
     { key: 'file_version_ids', label: '交付文件', type: 'files' },
@@ -125,6 +126,7 @@ async function loadCandidates() {
 }
 
 async function onClick(command) {
+  if (!props.allowed.includes(command) || running.value) return
   const def = defOf(command)
   if (def.fields?.length) {
     activeCommand.value = command
@@ -224,6 +226,7 @@ function submitDialog() {
 }
 
 watch(dialogVisible, (v) => { if (!v) activeCommand.value = null })
+defineExpose({ openCommand: onClick })
 </script>
 
 <template>
@@ -244,6 +247,9 @@ watch(dialogVisible, (v) => { if (!v) activeCommand.value = null })
 
   <DewDialog v-model="dialogVisible" :title="defOf(activeCommand)?.title || '操作'"
              :width="460">
+    <p v-if="activeCommand === 'handoff'" class="files-empty-hint">
+      对方分管核心接单后，会在对方组内生成关联任务。仅共享这里填写的交付说明和所选文件；完成后结果自动回到本事项。
+    </p>
     <el-form label-width="92px">
       <el-form-item v-for="f in (defOf(activeCommand)?.fields || [])" :key="f.key"
                     :label="f.label" :required="f.required">

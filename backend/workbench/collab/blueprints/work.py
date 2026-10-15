@@ -69,9 +69,10 @@ def work_me():
     # 跨组交付目标目录（组名本就公开于组织架构页；不含社团区/停用区）
     target_rows = WorkWorkspace.query.filter_by(status='active', scope='group').all()
     t_gids = [r.club_group_id for r in target_rows if r.club_group_id]
-    t_gnames = {g.id: g.name for g in ClubGroup.query.filter(ClubGroup.id.in_(t_gids)).all()} if t_gids else {}
+    t_gnames = {g.id: g.name for g in ClubGroup.query.filter(
+        ClubGroup.id.in_(t_gids), ClubGroup.status == 'active').all()} if t_gids else {}
     available_targets = [{"ws_id": r.id, "group_name": t_gnames.get(r.club_group_id)}
-                         for r in target_rows if r.club_group_id]
+                         for r in target_rows if r.club_group_id in t_gnames]
     return jsonify({"code": 200, "message": "ok", "data": {
         "eligibility": access.eligibility(user),
         "is_governance": access.is_governance(user),
@@ -156,7 +157,7 @@ def create_item():
     db.session.commit()
     if not created:
         return jsonify({"code": 200, "message": "事项已存在（幂等返回）",
-                        "data": {"id": item.id, "status": item.status}})
+                        "data": {"id": item.id, "status": item.status, "version": item.version}})
     detail = items_service.get_item_detail(user, item.id)
     return jsonify({"code": 200, "message": "已创建草稿", "data": detail})
 
@@ -320,6 +321,14 @@ def remove_business_link(item_id):
     integrations_service.remove_link(user, item_id, request.get_json(silent=True) or {})
     db.session.commit()
     return jsonify({"code": 200, "message": "已移除关联"})
+
+
+@bp.route("/items/<int:item_id>/handoffs", methods=["GET"])
+@jwt_required()
+def list_item_handoffs(item_id):
+    user = _require_user()
+    data = handoffs_service.list_item_handoffs(user, item_id)
+    return jsonify({"code": 200, "message": "ok", "data": data})
 
 
 @bp.route("/items/<int:item_id>/handoffs", methods=["POST"])

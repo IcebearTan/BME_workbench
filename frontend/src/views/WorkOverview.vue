@@ -103,6 +103,7 @@ async function decideHandoff(handoffId, action) {
     try {
       const res = await workService.decideHandoff(handoffId, action)
       ElMessage.success(res.message || '已处理')
+      if (action === 'accept' && res.data?.accepted_item_id) router.push(`/work/items/${res.data.accepted_item_id}`)
     } catch (e) {
       ElMessage.error(e.response?.data?.message || '操作失败')
     } finally {
@@ -170,6 +171,7 @@ onMounted(() => {
               <span>{{ h.from_group_name }} 交付给本组</span>
               <span class="todo-due" v-if="h.deadline">期望 {{ h.deadline }} 前</span>
             </div>
+            <p class="handoff-note">{{ h.note }}</p>
           </div>
           <DewButton size="sm" type="danger" plain :loading="decidingHandoff"
                      @click="decideHandoff(h.id, 'decline')">拒绝</DewButton>
@@ -263,6 +265,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.handoff-note { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.7; margin: 8px 0 0; }
 /* ── 数字块 ── */
 .stat-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
 .stat-block {

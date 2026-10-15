@@ -68,8 +68,8 @@ def create_handoff(user, item_id, payload):
         raise WorkApiError(403, '仅作者或本组协调员可以发起跨组交付')
     if item.kind != 'task':
         raise WorkApiError(409, '仅任务可以跨组交付')
-    if item.status == 'draft':
-        raise WorkApiError(409, '草稿不能交付')
+    if item.status in ('draft', 'done', 'cancelled'):
+        raise WorkApiError(409, '草稿或已结束任务不能交付')
 
     kind = (str(payload.get('kind') or '').strip())
     if not kind or len(kind) > 30:
@@ -85,7 +85,10 @@ def create_handoff(user, item_id, payload):
     if to_ws_id == item.workspace_id:
         raise WorkApiError(400, '目标组不能是本组（组内请用改派）')
     to_ws = WorkWorkspace.query.get(to_ws_id)
-    if not to_ws or to_ws.status != 'active':
+    from workbench.collab.models import ClubGroup
+    target_group = db.session.get(ClubGroup, to_ws.club_group_id) if to_ws and to_ws.club_group_id else None
+    if not to_ws or to_ws.status != 'active' or to_ws.scope != 'group' \
+            or not target_group or target_group.status != 'active':
         raise WorkApiError(404, '目标工作区不存在或未启用')
 
     dup = WorkHandoff.query.filter_by(item_id=item.id, to_workspace_id=to_ws_id,
@@ -274,7 +277,47 @@ def handoff_dict(req, *, source_item=None):
         'result_note': req.result_note,
         'created_by': req.created_by,
         'created_at': req.created_at.strftime('%Y-%m-%d %H:%M') if req.created_at else None,
+        'decided_at': req.decided_at.strftime('%Y-%m-%d %H:%M') if req.decided_at else None,
     }
+
+
+def list_item_handoffs(user, item_id):
+    """事项可读者可查看其交付包；跨组关系本身不授予对端事项阅读权。"""
+    item, _ = access.require_read(user, db.session.get(WorkItem, item_id))
+    workspace_ids = set(access.workspace_access(user))
+
+    def serialize(req):
+        source = db.session.get(WorkItem, req.item_id)
+        target = db.session.get(WorkItem, req.accepted_item_id) if req.accepted_item_id else None
+        source_access = access.can_read_item(user, source)
+        data = handoff_dict(req, source_item=source)
+        # 仅交付包明确绑定的固定版本；不暴露对象存储位置或源事项其他附件。
+        file_rows = (db.session.query(WorkFileLink, WorkFile, WorkFileVersion)
+                     .join(WorkFile, WorkFile.id == WorkFileLink.file_id)
+                     .join(WorkFileVersion, db.and_(WorkFileVersion.id == WorkFileLink.version_id,
+                                                   WorkFileVersion.file_id == WorkFile.id))
+                     .filter(WorkFileLink.target_type == 'handoff', WorkFileLink.target_id == req.id,
+                             WorkFileLink.purpose == 'handoff_payload', WorkFile.item_id == req.item_id,
+                             WorkFile.status == 'active', WorkFileVersion.format_check == 'passed')
+                     .order_by(WorkFileLink.id).all())
+        can_download = req.status in ('accepted', 'done') and req.to_workspace_id in workspace_ids
+        data.update(
+            can_read_source=bool(source_access),
+            can_read_target=bool(access.can_read_item(user, target)),
+            can_withdraw=bool(req.status == 'offered' and source_access and
+                              (req.created_by == user.id or source_access.is_coordinator)),
+            files=[{'id': wf.id, 'link_id': link.id, 'display_name': wf.display_name,
+                    'version_no': version.version_no, 'can_download': can_download}
+                   for link, wf, version in file_rows],
+        )
+        return data
+
+    outgoing = (WorkHandoff.query.filter_by(item_id=item.id)
+                .order_by(WorkHandoff.created_at.desc(), WorkHandoff.id.desc()).all())
+    incoming = (WorkHandoff.query.filter_by(accepted_item_id=item.id)
+                .order_by(WorkHandoff.created_at.desc(), WorkHandoff.id.desc()).all())
+    return {'outgoing': [serialize(row) for row in outgoing],
+            'incoming': [serialize(row) for row in incoming]}
 
 
 def my_handoff_queue(user):

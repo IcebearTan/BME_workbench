@@ -49,6 +49,10 @@ export const EVENT_LABELS = {
   participant_removed: '移除了参与者',
   file_attached: '添加了附件',
   visibility_changed: '调整了可见范围',
+  handoff_offered: '发起或调整了跨组交付',
+  handoff_accepted: '接下了跨组交付',
+  handoff_declined: '拒绝了跨组交付',
+  handoff_completed: '完成了跨组交付',
   emergency_access: '治理紧急介入',
 }
 
@@ -78,7 +82,7 @@ export const workService = {
     return api.get(`/work/items/${id}`).then(r => r.data)
   },
 
-  /** 编辑标题/正文/可见范围（expected_version 乐观锁） */
+  /** 编辑事项与任务设置（expected_version 乐观锁） */
   async patchItem(id, payload) {
     return api.patch(`/work/items/${id}`, payload).then(r => r.data)
   },
@@ -123,6 +127,11 @@ export const workService = {
   /** 发起跨组交付（X1：目标组接单后在本组生成关联任务） */
   async createHandoff(itemId, payload) {
     return api.post(`/work/items/${itemId}/handoffs`, payload).then(r => r.data)
+  },
+
+  /** 当前事项发出和收到的交付包；关联事项另行核验读取权 */
+  async fetchHandoffs(itemId) {
+    return api.get(`/work/items/${itemId}/handoffs`).then(r => r.data)
   },
 
   /** 接单/拒绝/撤回跨组交付（accept|decline|withdraw） */

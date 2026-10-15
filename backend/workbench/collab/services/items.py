@@ -31,6 +31,8 @@ TOPIC_STATUSES = ('draft', 'open', 'closed')
 # 事项列表默认分页（§12.3：服务端分页，默认 20、最大 100）
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
+TASK_SETTING_FIELDS = {'assignee_user_id', 'due_at', 'priority',
+                       'reviewer_user_id', 'accept_criteria'}
 
 
 def clean_body(raw):
@@ -147,6 +149,74 @@ def _parse_task_params(payload):
         params['priority'] = task['priority']
     if task.get('accept_criteria') is not None:
         params['accept_criteria'] = str(task['accept_criteria'])[:2000]
+    return params
+
+
+def _require_task_person(item, user_id, label, *, error_code=400):
+    """任务人员仍须有协作资格，事项参与授权不能绕过人员或工作区否决。"""
+    from flask import current_app
+    from workbench.models import Account
+    from workbench.collab.enforcement import workspace_denied
+
+    target = db.session.get(UserModel, user_id)
+    if (not target or target.verification_status != 'verified'
+            or workspace_denied(target, item.workspace_id)[0]
+            or not access.participation_eligible(target)):
+        raise WorkApiError(error_code, f'{label}不具备本事项的协作资格或访问已被否决')
+    account = Account.query.filter_by(
+        issuer=current_app.config['IDENTITY_ISSUER'], subject=str(target.id)).first()
+    if account and (account.disabled or account.person.blocked
+                    or account.person.external_id != str(target.person_id)):
+        raise WorkApiError(error_code, f'{label}账号或人员已停用，或身份映射需要核对')
+    return target
+
+
+def _parse_task_settings(item, raw):
+    """设置只接受明确支持的字段；草稿人员和时限可清空，发布后由命令维护。"""
+    if not isinstance(raw, dict):
+        raise WorkApiError(400, 'task 参数须为对象')
+    unknown = set(raw) - TASK_SETTING_FIELDS
+    if unknown:
+        raise WorkApiError(400, '不支持的任务设置字段：' + '、'.join(sorted(unknown)))
+    if item.kind != 'task':
+        raise WorkApiError(400, '话题不能设置任务属性，请先转为任务')
+    if item.status != 'draft' and set(raw) & {'assignee_user_id', 'due_at'}:
+        raise WorkApiError(409, '已发布任务须通过改派或改期调整负责人与截止时间')
+    if item.status in ('review', 'done', 'cancelled') and set(raw) & {
+            'reviewer_user_id', 'accept_criteria'}:
+        raise WorkApiError(409, '待验收或已结束任务不能修改验收设置')
+    params = {}
+    for key, value in raw.items():
+        if key in ('assignee_user_id', 'reviewer_user_id'):
+            if value is None:
+                params[key] = None
+                continue
+            if (isinstance(value, bool)
+                    or not isinstance(value, (int, str))
+                    or len(str(value)) > 18 or not str(value).isdecimal() or int(value) <= 0):
+                raise WorkApiError(400, f'task.{key} 须为正整数或 null')
+            params[key] = int(value)
+            _require_task_person(item, params[key],
+                                 '负责人' if key == 'assignee_user_id' else '验收人')
+        elif key == 'due_at':
+            if value is None:
+                params[key] = None
+                continue
+            if not isinstance(value, str) or len(value) not in (10, 16):
+                raise WorkApiError(400, 'task.due_at 格式应为 YYYY-MM-DD 或 YYYY-MM-DDTHH:MM')
+            try:
+                datetime.strptime(value, '%Y-%m-%d' if len(value) == 10 else '%Y-%m-%dT%H:%M')
+            except ValueError:
+                raise WorkApiError(400, 'task.due_at 格式应为 YYYY-MM-DD 或 YYYY-MM-DDTHH:MM')
+            params[key] = parse_due_at(value, 'task.due_at')
+        elif key == 'priority':
+            if value is not None and value not in ('normal', 'high', 'urgent'):
+                raise WorkApiError(400, 'task.priority 仅支持 normal/high/urgent')
+            params[key] = value or 'normal'
+        else:
+            if value is not None and (not isinstance(value, str) or len(value) > 2000):
+                raise WorkApiError(400, 'task.accept_criteria 须为不超过 2000 字的文本或 null')
+            params[key] = (value.strip() or None) if value is not None else None
     return params
 
 
@@ -418,10 +488,15 @@ def _serialize_item(user, item, item_access):
 # ── 编辑（乐观版本）─────────────────────────────────────────
 
 def patch_item(user, item_id, payload):
-    """编辑标题/正文/可见范围：草稿仅作者；已发布=作者∨协调员（§5.2）。
+    """编辑事项及任务设置：草稿仅作者；已发布=作者∨协调员（§5.2）。
 
     与命令路径一致持事项行锁（#1）：版本比对-提交原子化，并发 PATCH 不再
     静默丢失更新，record_event 的 seq 分配也回到锁内串行契约。"""
+    if not isinstance(payload, dict):
+        raise WorkApiError(400, '设置参数须为对象')
+    unknown = set(payload) - {'expected_version', 'title', 'body', 'visibility', 'task'}
+    if unknown:
+        raise WorkApiError(400, '不支持的事项设置字段：' + '、'.join(sorted(unknown)))
     item = (WorkItem.query
             .filter_by(id=item_id)
             .with_for_update()
@@ -441,6 +516,10 @@ def patch_item(user, item_id, payload):
     if item.version != expected:
         raise WorkApiError(409, '事项已被他人更新，请刷新后重试')
 
+    task_params = _parse_task_settings(item, payload['task']) if 'task' in payload else {}
+    task = WorkTask.query.filter_by(item_id=item.id).first() if 'task' in payload else None
+    if 'task' in payload and task is None:
+        raise WorkApiError(409, '任务属性缺失')
     diff = {}
     if payload.get('title') is not None:
         title = (str(payload['title']).strip())[:MAX_TITLE_LEN]
@@ -461,6 +540,20 @@ def patch_item(user, item_id, payload):
         if visibility != item.visibility:
             diff['visibility'] = {'from': item.visibility, 'to': visibility}
             item.visibility = visibility
+    task_diff = {}
+    for key, value in task_params.items():
+        old = getattr(task, key)
+        if old != value:
+            task_diff[key] = {
+                'from': old.isoformat() if isinstance(old, datetime) else old,
+                'to': value.isoformat() if isinstance(value, datetime) else value,
+            }
+            setattr(task, key, value)
+    if task_diff:
+        diff['task'] = task_diff
+        # 草稿仍只对作者开放；发布后新增验收人仅加入此事项，不增加工作区授权。
+        if item.status != 'draft' and 'reviewer_user_id' in task_diff and task.reviewer_user_id:
+            _ensure_assignee_participant(item, task.reviewer_user_id, user, reason='reviewer')
     if not diff:
         return item
     item.version += 1
@@ -546,7 +639,7 @@ def command_topic(user, item_id, command, payload):
     raise WorkApiError(400, f'暂不支持命令 {command}')
 
 
-def _ensure_assignee_participant(item, assignee_id, actor):
+def _ensure_assignee_participant(item, assignee_id, actor, *, reason='assignee'):
     """发布任务时负责人若无事项访问权，自动加入参与者（§7.3：不扩大可见范围）。"""
     existed = WorkItemParticipant.query.filter_by(item_id=item.id,
                                                   user_id=assignee_id).first()
@@ -559,7 +652,7 @@ def _ensure_assignee_participant(item, assignee_id, actor):
         db.session.add(WorkItemParticipant(item_id=item.id, user_id=assignee_id,
                                            invited_by=actor.id))
     record_event(item, 'participant_added', actor_user_id=actor.id,
-                 diff={'user_id': assignee_id, 'reason': 'assignee'})
+                 diff={'user_id': assignee_id, 'reason': reason})
 
 
 def _notify_item_audience(item, actor_id, notify_type, extra_targets=None):
@@ -774,6 +867,9 @@ def add_participant(user, item_id, payload):
         raise WorkApiError(404, '用户不存在')
     if not access.participation_eligible(target):
         raise WorkApiError(400, '该用户不具备协作资格（须在任干事或已开通的组员）')
+    from workbench.collab.enforcement import workspace_denied
+    if workspace_denied(target, item.workspace_id)[0]:
+        raise WorkApiError(400, '该人员的本事项工作区访问已被否决或账号已失效')
     ptype = payload.get('ptype', 'collaborator')
     if ptype not in PTYPES:
         raise WorkApiError(400, f"ptype 仅支持 {'/'.join(PTYPES)}")
@@ -810,6 +906,9 @@ def remove_participant(user, item_id, target_id, reason=None):
                                             user_id=target_id).first()
     if not p or p.removed_at is not None:
         raise WorkApiError(404, '参与者不存在')
+    task = WorkTask.query.filter_by(item_id=item.id).first() if item.kind == 'task' else None
+    if task and target_id in (task.assignee_user_id, task.reviewer_user_id):
+        raise WorkApiError(409, '不能移除当前负责人或验收人，请先变更任务角色')
     p.removed_at = datetime.now()
     record_event(item, 'participant_removed', actor_user_id=user.id,
                  diff={'user_id': target_id},
