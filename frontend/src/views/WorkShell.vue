@@ -8,7 +8,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { DewCard, DewTag, DewSkeleton, DewButton } from '@bme/dew-ui'
 import { ArrowLeft, Fold, Briefcase, Odometer, ChatLineSquare, DataBoard,
-         OfficeBuilding, Folder, Clock, User } from '@element-plus/icons-vue'
+         OfficeBuilding, Folder, Clock, User, Setting } from '@element-plus/icons-vue'
 import NotificationBell from '../components/Notification/NotificationBell.vue'
 import '../styles/collaboration.css'
 import { useWorkAccess } from '../composables/useWorkAccess'
@@ -44,22 +44,31 @@ const hasSubtree = computed(() =>
   (me.value?.workspaces || []).some(w => w.subtree))
 
 // ── 侧栏导航（URL 即导航；子组汇总仅 subtree 授权者渲染，路由常驻） ──
-const navItems = computed(() => {
-  if (isAppointmentView.value && !hasAccess.value) return [{ to: '/work/appointments', label: '任职履历', icon: Clock }]
-  const items = [
-    { to: '/work', label: '概览', icon: Odometer, badge: todoBadgeTotal.value || null },
-    { to: '/work/items', label: '小组事项', icon: ChatLineSquare },
-    { to: '/work/board', label: '看板', icon: DataBoard },
+const navGroups = computed(() => {
+  const people = { id: 'people', label: '组织与个人', items: [
     { to: '/work/members', label: '成员', icon: User },
     { to: '/work/appointments', label: '任职履历', icon: Clock },
+  ] }
+  if (isAppointmentView.value && !hasAccess.value) return [{ ...people, items: people.items.slice(1) }]
+  const groups = [
+    { id: 'work', label: '日常工作', items: [
+      { to: '/work', label: '概览', icon: Odometer, badge: todoBadgeTotal.value || null },
+      { to: '/work/items', label: '小组事项', icon: ChatLineSquare },
+      { to: '/work/board', label: '看板', icon: DataBoard },
+      { to: '/work/files', label: '工作资料', icon: Folder },
+      { to: '/work/records', label: '工作记录', icon: Clock },
+    ] },
+    people,
+    { id: 'coordination', label: '小组协调', items: hasSubtree.value
+      ? [{ to: '/work/summary', label: '子组汇总', icon: OfficeBuilding }] : [] },
   ]
-  if (store.state.permissions.includes('governance:manage')) items.push({ to: '/work/organization', label: '小组任职管理', icon: User })
-  if (hasSubtree.value) items.push({ to: '/work/summary', label: '子组汇总', icon: OfficeBuilding })
-  items.push(
-    { to: '/work/files', label: '工作资料', icon: Folder },
-    { to: '/work/records', label: '工作记录', icon: Clock })
-  return items
+  const management = []
+  if (store.state.permissions.includes('governance:manage')) management.push({ to: '/work/organization', label: '小组任职管理', icon: User })
+  if (isGovernance.value) management.push({ to: '/work/governance', label: '工作区与授权', icon: Setting })
+  groups.push({ id: 'management', label: '管理与治理', items: management })
+  return groups.filter(group => group.items.length)
 })
+const navItems = computed(() => navGroups.value.flatMap(group => group.items))
 // 路径匹配：概览严格等于 /work；其余前缀匹配（/work/items/123 高亮「小组事项」）
 function isActive(item) {
   if (item.to === '/work') return route.path === '/work'
@@ -104,8 +113,6 @@ onUnmounted(() => {
   stopSummaryPolling()
 })
 
-// 治理提示分流：管理端登录仅超管放行（isStaff 只认 super_admin），治理授权人员走超管代办
-const isSuperAdmin = computed(() => store.state.permissions.includes('governance:manage'))
 const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAINING_URL || '/')
 </script>
 
@@ -113,7 +120,8 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
   <div :class="['work-shell work-surface', { 'theme-dark': isDarkMode, 'theme-light': !isDarkMode }]">
     <!-- 顶栏：素色底 + 下边框（返回平台 | 上下文 | 铃铛） -->
     <header class="ws-topbar">
-      <el-icon v-if="isMobile" class="ws-icon-btn" @click="drawerOpen = !drawerOpen"><Fold /></el-icon>
+      <button v-if="isMobile" type="button" class="ws-icon-btn" aria-label="切换侧栏"
+              :aria-expanded="drawerOpen" @click="drawerOpen = !drawerOpen"><el-icon><Fold /></el-icon></button>
       <button type="button" class="ws-back" @click="backToPlatform">
         <el-icon :size="14"><ArrowLeft /></el-icon>
         <span>返回平台</span>
@@ -140,19 +148,19 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
           </el-select>
         </div>
 
-        <nav class="ws-nav">
-          <router-link v-for="item in navItems" :key="item.to" :to="item.to"
-                       class="ws-nav-item" :class="{ 'ws-nav-item--active': isActive(item) }"
-                       @click="drawerOpen = false">
-            <el-icon :size="15" class="ws-nav-icon"><component :is="item.icon" /></el-icon>
-            <span class="ws-nav-label">{{ item.label }}</span>
-            <span v-if="item.badge" class="ws-nav-badge ws-num">{{ item.badge > 99 ? '99+' : item.badge }}</span>
-          </router-link>
+        <nav class="ws-nav" aria-label="工作台功能导航">
+          <section v-for="group in navGroups" :key="group.id" :aria-labelledby="`ws-nav-${group.id}`"
+                   class="ws-nav-group" :class="{ 'ws-nav-group--management': group.id === 'management' }">
+            <h2 :id="`ws-nav-${group.id}`" class="ws-nav-heading">{{ group.label }}</h2>
+            <router-link v-for="item in group.items" :key="item.to" :to="item.to"
+                         class="ws-nav-item" :class="{ 'ws-nav-item--active': isActive(item) }"
+                         :aria-current="isActive(item) ? 'page' : undefined" @click="drawerOpen = false">
+              <el-icon :size="15" class="ws-nav-icon"><component :is="item.icon" /></el-icon>
+              <span class="ws-nav-label">{{ item.label }}</span>
+              <span v-if="item.badge" class="ws-nav-badge ws-num">{{ item.badge > 99 ? '99+' : item.badge }}</span>
+            </router-link>
+          </section>
         </nav>
-
-        <div v-if="isGovernance" class="ws-side-foot">
-          <router-link to="/work/governance">打开工作台管理</router-link>
-        </div>
       </aside>
       <div v-if="isMobile && drawerOpen" class="ws-backdrop" @click="drawerOpen = false" />
 
@@ -201,7 +209,8 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
   background: var(--ws-topbar);
   border-bottom: 1px solid var(--ws-border);
 }
-.ws-icon-btn { font-size: 20px; cursor: pointer; color: var(--dew-text-muted); }
+.ws-icon-btn { display: inline-flex; align-items: center; border: 0; background: transparent; padding: 6px; font-size: 20px; cursor: pointer; color: var(--dew-text-muted); }
+.ws-icon-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .ws-back {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 10px; border: none; border-radius: 8px;
@@ -231,7 +240,10 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
 .ws-ws-picker { margin-bottom: 14px; }
 .ws-ws-picker :deep(.el-select) { width: 100%; }
 
-.ws-nav { display: flex; flex-direction: column; gap: 2px; }
+.ws-nav { display: flex; flex-direction: column; gap: 18px; }
+.ws-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.ws-nav-heading { margin: 0 0 5px; padding: 0 10px; font-size: 11.5px; font-weight: 600; line-height: 1.6; color: var(--dew-text-faint); }
+.ws-nav-group--management { border-top: 1px solid var(--ws-border); padding-top: 16px; }
 .ws-nav-item {
   display: flex; align-items: center; gap: 9px;
   padding: 8px 10px; border-radius: 8px;
@@ -250,9 +262,6 @@ const backToPlatform = () => window.location.assign(import.meta.env.VITE_TRAININ
   font-size: 11px; font-weight: 600; text-align: center;
   color: #fff; background: var(--el-color-danger, #f56c6c);
 }
-
-.ws-side-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--ws-border); }
-.ws-side-foot p { margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--dew-text-faint); }
 
 /* ── 内容区 ── */
 .ws-main { flex: 1; min-width: 0; padding: 20px 24px 48px; }
